@@ -61,8 +61,23 @@
     };
 
     displayResults = function (hcvG_results) {
-        // hcvG_results.canvas.width = "100%";
-        proccessedImg.append($(hcvG_results.canvas).width(proccessedImg.width()));
+        //Display original canvas:
+        proccessedImg.empty();
+        proccessedImg.append(
+            $(hcvG_results.canvas).width(proccessedImg.width())
+        );
+
+        //Update canvas visibility once the region comes back
+        // hcvG_results.analysisRegion.then(function (region) {
+            //Determine the amount the image has been scaled
+
+            //Set the image results element to a stationary height based on
+            //region height adjusted for the amount scaled
+
+            //Set the canvas margin-top to (-) where the top needs to be
+        // });
+
+        //Update band locations
         hcvG_results.bandLocationPromise.then(function (results) {
             var lane, table, band;
             console.log('here', results.lanes);
@@ -96,7 +111,8 @@
         sampleButton.click(function (evt) {
             evt.preventDefault();
             textAnswer.empty();
-            proccessedImg.empty();
+            proccessedImg.empty().text('Grabbing the image from the server, ' +
+                    'this may take a few seconds.');
             if (!sampleButtonClicked) {
                 sampleButtonClicked = true;
                 getAndRunSample();
