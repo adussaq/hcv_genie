@@ -77,19 +77,11 @@ hcvGenie.findBands = (function () {
                 medArr[Math.ceil(medArr.length / 2)]) / 2;
     };
 
-    callGenotype = function (binarySolution, lane) {
+    callGenotype = function (lane) {
         // console.log('trying',binarySolution, lane);
-        return function (database) {
-            var thisDecimal = parseInt(binarySolution.join(''), 2),
-                final;
-            thisDecimal = thisDecimal.toString(36);
-            if (database.hasOwnProperty(thisDecimal)) {
-                final = database[thisDecimal].replace(/GNT/g, 'Genotype');
-            } else {
-                final = "unknown";
-            }
-            lane.genotype = final;
-            return final;
+        return function (genotypeCall) {
+            lane.genotype = genotypeCall;
+            return genotypeCall;
         };
     };
 
@@ -160,7 +152,8 @@ hcvGenie.findBands = (function () {
                 lanePromises = [], getmxb,
                 //functions
                 determineBoarderParams, performHoughTransform,
-                startEdgeDetection, moveDownLane, walking, getHTEdgeArr;
+                startEdgeDetection, moveDownLane, walking, getHTEdgeArr,
+                shiftHorizontally;
         /*
         leftEdge, bottomEdge = 0, testX, testY, xBuffer,
                 testing = false, distances = [], distanceMeasure,
@@ -428,6 +421,21 @@ hcvGenie.findBands = (function () {
             }
         };
 
+        shiftHorizontally = function (xPos, yPos, edges, params, next) {
+            //Add in a fake rectangle to shift the slope to determine what side
+            // we hit we just
+            var leftEdgeGuess, rightEdgeGuess, distanceTraveled;
+            console.log("Hit a vert edge", xPos, yPos);
+            next(yPos + 1);
+            return;
+            distanceTraveled = round(Math.abs(yPos -
+                    params.y_origin) * Math.sqrt(params.m *
+                    params.m + 1));
+            leftEdgeGuess = Math.asin(params.rect_width / 2 / distanceTraveled);
+            getmxb(params, {});
+            next(yPos);
+        };
+
         walking = function (edges, yPos, params, rectangle) {
             var walkFunction;
 
@@ -457,6 +465,16 @@ hcvGenie.findBands = (function () {
                         ) {
                             performHoughTransform({x: xPos, y: yPos,
                                     end: false}, edges, params, walkFunction);
+                            edgeFound = true;
+                        } else if (
+                            edges[xPos + xRange] &&
+                            edges[xPos + xRange][yPos].direction === 90 &&
+                            edges[xPos + xRange][yPos].strength > 0
+                        ) {
+                            //If we hit a verticle edge then we have gone too
+                            // far to the side
+                            shiftHorizontally(xPos + xRange, yPos,
+                                    edges, params, walkFunction);
                             edgeFound = true;
                         }
                     }
@@ -556,15 +574,8 @@ hcvGenie.findBands = (function () {
 
         return Promise.all(lanePromises).then(function (allLanes) {
             //calculate the actual lane calls
-            var sixScore = 0, sixLimit, i, j, sixCount = 0, call,
-                    distance_cont, avgHeight = 0, avgWidth = 0, hwCount = 0,
-                    binarySolutionInit, binarySolution = [];
-
-            binarySolutionInit = JSON.stringify([
-                "0", "0", "0", "0", "0", "0", "0", "0", "0", "0",
-                "0", "0", "0", "0", "0", "0", "0", "0", "0", "0",
-                "0", "0", "0"
-            ]);
+            var sixScore = 0, sixLimit, i, j, sixCount = 0, call, callArr = [],
+                    distance_cont, avgHeight = 0, avgWidth = 0, hwCount = 0;
 
             for (i = 0; i < allLanes.length; i += 1) {
                 avgHeight += (1 + allLanes[i].bands.length)
@@ -604,16 +615,13 @@ hcvGenie.findBands = (function () {
                     distance2_sixScore_band_rat / sixScore;
 
             for (i = 0; i < allLanes.length; i += 1) {
-                binarySolution[i] = JSON.parse(binarySolutionInit);
+                callArr[i] = [];
                 for (j = 0; j < allLanes[i].bands.length; j += 1) {
                     call = Math.round(allLanes[i].bands[j].distance *
                             distance_cont + distance2_constant_band_rat);
                     allLanes[i].bands[j].call = call;
-                    if (call > 2) {
-                        binarySolution[i][call - 3 < 20
-                            ? call - 3
-                            : call - 4] = "1";
-                    }
+                    callArr[i].push(call);
+
                     //Write call on canvas
                     myCanvas.fillText(
                         call,
@@ -623,8 +631,8 @@ hcvGenie.findBands = (function () {
                         '#8A2BE2'
                     );
                 }
-                hcvGenie.genotypesBase36.then(
-                    callGenotype(binarySolution[i], allLanes[i])
+                hcvGenie.genotype(callArr[i]).then(
+                    callGenotype(allLanes[i])
                 );
             }
             return {
@@ -1259,12 +1267,12 @@ hcvGenie.findBands = (function () {
 
 //After the above loads we need to insure that we can load the JSON with the
 // actual genotype calls.
-hcvGenie.genotypesBase36 = (function () {
+hcvGenie.genotype = (function () {
     'use strict';
-    return new Promise(function (resolve, reject) {
+    var dictionaryPromise = new Promise(function (resolve, reject) {
         var xobj = new XMLHttpRequest();
         xobj.overrideMimeType("application/json");
-        xobj.open('GET', './json/genotypesBase36.json', true);
+        xobj.open('GET', './json/genotypesCurrent.json', true);
         xobj.onreadystatechange = function () {
             console.log(xobj.readyState, xobj.status, xobj);
             if (xobj.readyState === 4 && xobj.status === 200) {
@@ -1279,4 +1287,33 @@ hcvGenie.genotypesBase36 = (function () {
         };
         xobj.send(null);
     });
+
+    return function (bandPattern) {
+        var binarySolution = [
+            "0", "0", "0", "0", "0", "0", "0", "0", "0", "0",
+            "0", "0", "0", "0", "0", "0", "0", "0", "0", "0",
+            "0", "0", "0"
+        ];
+        return dictionaryPromise.then(function (database) {
+            var i, call, thisKey, final;
+            for (i = 0; i < bandPattern.length; i += 1) {
+                call = parseInt(bandPattern[i]);
+                console.log(bandPattern[i], call);
+                if (call && !isNaN(call) && call > 2 && call < 27) {
+                    binarySolution[call - 3 < 20
+                        ? call - 3
+                        : call - 4] = "1";
+                }
+            }
+            thisKey = (parseInt(binarySolution.join(''), 2)).toString(36);
+
+            if (database.hasOwnProperty(thisKey)) {
+                final = database[thisKey].replace(/GNT/g, 'Genotype');
+            } else {
+                final = "Unknown Band Pattern";
+            }
+
+            return final;
+        });
+    };
 }());

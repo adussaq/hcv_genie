@@ -1,19 +1,100 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="HCV Genie, automated interpreter for Versant HCV LiPA genotype assays.">
+    <meta name="author" content="Alex Dussaq, alexdussaq.info">
+    <!-- <link rel="icon" href="../../favicon.ico"> -->
 	<title>HCV Genie 2.0</title>
+    <!-- Bootstrap core CSS -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            min-height: 1000px;
+            padding-top: 70px;
+        }
+        .bottom-buffer {
+            margin-bottom:20px;
+        }
+    </style>
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <!-- <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet"> -->
+
+    <!-- Analytical Elements -->
     <script type="text/javascript" src="./js/promises/checkPromises.min.js"></script>
-	<script type="text/javascript" src="./js/jquery-2.1.4.min.js"></script>
     <script type="text/javascript" src="./js/amd_ww.2.0.0.min.js"></script>
 	<script type="text/javascript" src="./js/pdfjs/pdf.min.js"></script>
-    <!-- <script type="text/javascript" src="./js/alpha/hcvGenie.js"></script> -->
     <script type="text/javascript" src="./js/hcvGenie2.min.js"></script> 
 </head>
 <body>
-	<div>For now this runs entirely in the console</div>
-    <canvas id='the-canvas'></canvas>
-    <div id='solution'></div>
+  <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">HCV Genie</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+      <!-- Main component for a primary marketing message or call to action -->
+      <div class="row">
+        <div class='col-xs-12'>
+            <div class="jumbotron">
+              <!-- Announcement Header -->
+              <h1 class="text-center">HCV Genie</h1>
+              <h2 class="text-center">
+                A HIPAA Compliant, Automated Interpreter
+                <br />
+                for Versant HCV LiPA Genotype Assays
+              </h2>
+              <h3 class="text-center">Presented by UAB Pathology</h3>
+            </div>
+        </div>
+      </div>
+      <div class="row bottom-buffer">
+        <div class='col-xs-12'>
+            <h3 class="text-center">To get started simply click one of the buttons below.<br />(Or drag an image file to the empty square, not yet implemented.)</h3>
+        </div>
+      </div>
+      <div class="row bottom-buffer">
+        <div class='col-xs-12 col-sm-6 text-center'>
+            <button id="computerFile" type="button" class="btn btn-primary btn-lg">Open From Computer</button>
+        </div>
+        <div class='col-xs-12 col-sm-6 text-center'>
+            <button id="demoFile" type="button" class="btn btn-info btn-lg">Try one of our Demos</button>
+        </div>
+      </div>
+      <div class="row">
+        <div id="textResults" class='col-xs-12'>
+        </div>
+      </div>
+      <div class="row">
+        <div id="imageResults" class='col-xs-12'>
+        </div>
+      </div>
+      <div class="row">
+        <div id="originalImage" class='col-xs-12'>
+        </div>
+      </div>
+    </div>
+
+
 </body>
 <!-- Load UI Scripts -->
-<script type="text/javascript" src="./js/hcvGenieUI.min.js"></script>
+<script type="text/javascript" src="./js/jquery-2.1.4.min.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <!-- <script src="../../assets/js/ie10-viewport-bug-workaround.js"></script> -->
+<script type="text/javascript" src="./js/hcvGenieUI.js"></script>
 </html>
