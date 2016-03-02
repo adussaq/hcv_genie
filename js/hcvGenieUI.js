@@ -18,8 +18,8 @@
         hcvGenie.findBands({
             image: {
                 type: 'pdf',
-                pageNumber: page,
-                url: './dataExamples/samples1-20.pdf',
+                pageNumber: 1,
+                url: './dataExamples/pages/samples1-20_page' + page + '.pdf',
                 scale: 2.25
             }
         }).then(displayResults);
