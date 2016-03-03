@@ -1,9 +1,9 @@
-/*global amd_ww, hcvGenie, PDFJS console, document, checkPromises, jQuery*/
+/*global amd_ww, window, FileReader, hcvGenie, PDFJS console, document, checkPromises, jQuery*/
 (function () {
     'use strict';
         //functions
     var getAndRunSample, $ = jQuery, displayResults, getBandNumbers,
-            updateGenotypeCall,
+            updateGenotypeCall, getFile,
             //UI Elements
             textAnswer, /*originalImage,*/ proccessedImg,
             //Proccessing Done
@@ -102,12 +102,36 @@
         });
     };
 
+    getFile = function (file) {
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            //this function is called when the input loads an image
+            var url, reader = new FileReader();
+            reader.onload = function (event) {
+                url = event.target.result;
+                hcvGenie.findBands({
+                    image: {
+                        type: 'pdf',
+                        pageNumber: 1,
+                        url: url,
+                        scale: 2.25
+                    }
+                }).then(displayResults);
+            };
+
+            //when the file is read it triggers the onload event above.
+            reader.readAsDataURL(file);
+        } else {
+            window.alert('The File APIs are not fully supported in this browser.');
+        }
+    };
+
 
    //Add button functionality
     (function () {
-        var sampleButton;
+        var sampleButton, fromComputerButton;
 
         sampleButton = $('#demoFile');
+        fromComputerButton = $('#computerFile');
         sampleButton.click(function (evt) {
             evt.preventDefault();
             textAnswer.empty();
@@ -116,6 +140,15 @@
             if (!sampleButtonClicked) {
                 sampleButtonClicked = true;
                 getAndRunSample();
+            }
+        });
+        fromComputerButton.change(function (evt) {
+            textAnswer.empty();
+            proccessedImg.empty();
+            if (!sampleButtonClicked) {
+                sampleButtonClicked = true;
+                console.log(evt);
+                getFile(evt.target.files[0]);
             }
         });
     }());
