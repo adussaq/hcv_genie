@@ -58,7 +58,7 @@ hcvGenie.findBands = (function () {
     });
 
     houghTransformWorker = amd_ww.startWorkers({
-        filename: './js/houghTransformWorker.js',
+        filename: './js/houghTransformWorker.min.js',
         num_workers: 2 //Since Hough Transforms and edge detection often
                         // run simultaneously
     });
@@ -624,14 +624,14 @@ hcvGenie.findBands = (function () {
             for (i = 0; i < allLanes.length; i += 1) {
                 sixLimit = (6.5 - distance_constant_band_rat) / distance_cont;
                 for (j = 0; j < allLanes[i].bands.length; j += 1) {
-                    if (allLanes[i].bands[j].rectangle.bool && 
+                    if (allLanes[i].bands[j].rectangle.bool &&
                             allLanes[i].bands[j].distance < sixLimit) {
                         call = Math.round(allLanes[i].bands[j].distance *
                                 distance_cont + distance_constant_band_rat);
                         sixScore += allLanes[i].bands[j].distance / call;
                         sixCount += 1;
                     } else if (!allLanes[i].bands[j].rectangle.bool) {
-                        allLanes[i].bands.splice(j,1);
+                        allLanes[i].bands.splice(j, 1);
                         j -= 1;
                     }
                 }
