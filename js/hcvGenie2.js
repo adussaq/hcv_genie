@@ -53,24 +53,24 @@ hcvGenie.findBands = (function () {
             vertHoughTransformWorker;
 
     colorDistanceWorker = amd_ww.startWorkers({
-        filename: './js/colorDistanceWorker.min.js',
+        filename: './js/workers/colorDistanceWorker.min.js',
         num_workers: 4
     });
 
     houghTransformWorker = amd_ww.startWorkers({
-        filename: './js/houghTransformWorker.min.js',
+        filename: './js/workers/houghTransformWorker.min.js',
         num_workers: 2 //Since Hough Transforms and edge detection often
                         // run simultaneously
     });
 
     vertHoughTransformWorker = amd_ww.startWorkers({
-        filename: './js/vertHoughTransformWorker.min.js',
+        filename: './js/workers/vertHoughTransformWorker.min.js',
         num_workers: 2 //Since Hough Transforms and edge detection often
                         // run simultaneously
     });
 
     edgeDetectionWorker = amd_ww.startWorkers({
-        filename: './js/edgeDetectionWorker.min.js',
+        filename: './js/workers/edgeDetectionWorker.min.js',
         num_workers: 2 //Since Hough Transforms and edge detection often
                         // run simultaneously
     });
