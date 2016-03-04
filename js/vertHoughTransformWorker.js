@@ -17,8 +17,8 @@
         y0 = (h - 1) / 2;
 
         peaks = {
-            vert: {distPos: [0, 0, 0], distNeg: [0, 0, 0]},
-            horz: {distPos: [0, 0, 0], distNeg: [0, 0, 0]}
+            vert: {distPos: [0, 0, 0], distNeg: [0, 0, 0]}
+            // horz: {distPos: [0, 0, 0], distNeg: [0, 0, 0]}
         };
 
         maxDist = Math.sqrt(x0 * x0 + y0 * y0); // since x0, y0 is the center
@@ -47,23 +47,23 @@
                     //If we find an edge vary the angle and
                     //compute hough transform curve of angle
                     //by mid distance
+                    // if (
+                    //     edges[x][y].direction === 0 ||
+                    //     edges[x][y].direction === 45 ||
+                    //     edges[x][y].direction === 135
+                    // ) {
+                    //     //Look at the 90* region
+                    //     for (theta = PI_5_12; theta < PI_7_12;
+                    //             theta += deltaRad) {
+                    //         mdist = (x - x0) * Math.cos(theta) +
+                    //                 (y - y0) * Math.sin(theta);
+                    //         addCount(theta, mdist, edges[x][y].strength, 'horz');
+                    //     }
+                    // }
                     if (
-                        edges[x][y].direction === 0 ||
-                        edges[x][y].direction === 45 ||
-                        edges[x][y].direction === 135
-                    ) {
-                        //Look at the 90* region
-                        for (theta = PI_5_12; theta < PI_7_12;
-                                theta += deltaRad) {
-                            mdist = (x - x0) * Math.cos(theta) +
-                                    (y - y0) * Math.sin(theta);
-                            addCount(theta, mdist, edges[x][y].strength, 'horz');
-                        }
-                    }
-                    if (
-                        edges[x][y].direction === 90 ||
-                        edges[x][y].direction === 45 ||
-                        edges[x][y].direction === 135
+                        edges[x][y].direction === 90 //||
+                        // edges[x][y].direction === 45 ||
+                        // edges[x][y].direction === 135
                     ) {
                         //Look at the 0* region
                         for (theta = -PI_1_12; theta < PI_1_12;
@@ -80,28 +80,18 @@
         peaks = verifyPeaks(peaks, w, h);
 
         finalTheta = Math.round(roundDigit * (
-            (peaks.vert.distPos[0] + peaks.vert.distNeg[0] -
-                    Math.PI / 2 *
-                    (peaks.horz.distPos[2] + peaks.horz.distNeg[2]) +
-                    peaks.horz.distPos[0] + peaks.horz.distNeg[0]) /
-            (peaks.vert.distPos[2] + peaks.vert.distNeg[2] +
-                    peaks.horz.distPos[2] + peaks.horz.distNeg[2])
+            (peaks.vert.distPos[0] + peaks.vert.distNeg[0]) /
+            (peaks.vert.distPos[2] + peaks.vert.distNeg[2])
         )) / roundDigit;
 
-        finalYi = Math.round(roundDigit * (
-            y0 + peaks.horz.distPos[1] / peaks.horz.distPos[2] +
-            peaks.horz.distNeg[1] / peaks.horz.distNeg[2]
-        )) / roundDigit;
+        finalYi = h / 2;
 
         finalXi = Math.round(roundDigit * (
             x0 + peaks.vert.distPos[1] / peaks.vert.distPos[2] +
             peaks.vert.distNeg[1] / peaks.vert.distNeg[2]
         )) / roundDigit;
 
-        finalH = Math.round(roundDigit * (
-            peaks.horz.distPos[1] / peaks.horz.distPos[2] -
-            peaks.horz.distNeg[1] / peaks.horz.distNeg[2]
-        )) / roundDigit;
+        finalH = h;
 
         finalW = Math.round(roundDigit * (
             peaks.vert.distPos[1] / peaks.vert.distPos[2] -
@@ -115,9 +105,7 @@
             width: finalW,
             height: finalH,
             theta: finalTheta,
-            HTscore: peaks.vert.distPos[2] + peaks.vert.distNeg[2] +
-                    peaks.horz.distPos[2] + peaks.horz.distNeg[2],
-            bool: true
+            HTscore: peaks.vert.distPos[2] + peaks.vert.distNeg[2]
         };
     };
 
@@ -162,31 +150,7 @@
             result.vert.distPos[1] = -w / 4 + result.vert.distPos[1] / 2;
             peaks.vert.distNeg[1] = result.vert.distPos[1];
         }
-
-        //Fix horz
-        if (result.horz.distPos[2] === 0) {
-            if (result.horz.distNeg[2] === 0) {
-                //Set to the initial parameters
-                peaks.horz.distPos[1] = h / 2;
-                peaks.horz.distNeg[1] = -h / 2;
-                result.horz.distPos[2] = 0.0001;
-                result.horz.distNeg[2] = 0.0001;
-            } else {
-                //More complicated, decrease weight of both and
-                // set them equal to each other
-                result.horz.distNeg[2] /= 100;
-                result.horz.distPos[2] = result.horz.distNeg[2];
-                result.horz.distNeg[1] = -h / 4 + result.horz.distNeg[1] / 2;
-                peaks.horz.distPos[1] = result.horz.distNeg[1];
-            }
-        } else if (result.horz.distNeg[2] === 0) {
-            result.horz.distPos[2] /= 100;
-            result.horz.distNeg[2] = result.horz.distPos[2];
-            result.horz.distPos[1] = -h / 4 + result.horz.distPos[1] / 2;
-            peaks.horz.distNeg[1] = result.horz.distPos[1];
-        }
-
-        return result;
+        return peaks;
     };
 
     //The worker recieving a message

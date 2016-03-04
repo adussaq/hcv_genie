@@ -27,7 +27,7 @@ hcvGenie.findBands = (function () {
             //No need to run this if there aren't at least 4 x areas
             labColorDistMaxArea = labColorSectionSide * labColorSectionSide * 4,
             minGreenDist = 16, minimum_green_edge = 10,
-            minimum_grey_edge = 0.04,
+            minimum_grey_edge = 0.025,
             //The following two sets of data were established using 853 example
             // bands across 10 gels. This was measured by varying the scale
             // uniformly random from 2 to 5 from the pdf sample sent to me.
@@ -46,17 +46,25 @@ hcvGenie.findBands = (function () {
             distance2_height_band_rat = 0.009150503777635,
             distance2_width_band_rat = 0.254982069800913,
             distance2_sixScore_band_rat = 0.822512153640132,
-            minimumMedianGrey = 0.02,
+            minimumMedianGrey = 0.015,
 
     //Global Objects
-            colorDistanceWorker, houghTransformWorker, edgeDetectionWorker;
+            colorDistanceWorker, houghTransformWorker, edgeDetectionWorker,
+            vertHoughTransformWorker;
 
     colorDistanceWorker = amd_ww.startWorkers({
-        filename: './js/colorDistanceWorker.min.js'
+        filename: './js/colorDistanceWorker.min.js',
+        num_workers: 4
     });
 
     houghTransformWorker = amd_ww.startWorkers({
-        filename: './js/houghTransformWorker.min.js',
+        filename: './js/houghTransformWorker.js',
+        num_workers: 2 //Since Hough Transforms and edge detection often
+                        // run simultaneously
+    });
+
+    vertHoughTransformWorker = amd_ww.startWorkers({
+        filename: './js/vertHoughTransformWorker.min.js',
         num_workers: 2 //Since Hough Transforms and edge detection often
                         // run simultaneously
     });
@@ -153,11 +161,53 @@ hcvGenie.findBands = (function () {
                 //functions
                 determineBoarderParams, performHoughTransform,
                 startEdgeDetection, moveDownLane, walking, getHTEdgeArr,
-                shiftHorizontally;
+                distancePromise, vertHoughTrans;
         /*
         leftEdge, bottomEdge = 0, testX, testY, xBuffer,
                 testing = false, distances = [], distanceMeasure,
         */
+
+        vertHoughTrans = function (edge, edges, params, next) {
+            //Add in a fake rectangle to shift the slope to determine what side
+            // we hit we just
+            var htEdges;
+            htEdges = getHTEdgeArr(edge, edges, params, 2);
+            vertHoughTransformWorker.submit({
+                array: htEdges.array,
+                roundDigit: roundDigit
+            }).then(function (rectangle) {
+                rectangle.HTscore = round(rectangle.HTscore /
+                        minimum_grey_edge / 50); // Note 50 > 10 used in
+                                                        // true rectangle
+                rectangle.bool = false;
+                rectangle.x0 += params.x_shift + htEdges.x_shift;
+                rectangle.y0 += params.y_shift + htEdges.y_shift;
+                // outlineRectangle(JSON.parse(JSON.stringify(rectangle)), '#800080', myCanvas);
+                rectangle.width = params.rect_width;
+                rectangle.height = params.rect_height;
+                // outlineRectangle(rectangle, '#FFA500', myCanvas);
+
+                params.distances.push({
+                    distance2: round(Math.sqrt(Math.pow(rectangle.x0
+                            - params.x_origin, 2) +
+                            Math.pow(rectangle.y0 -
+                            params.y_origin, 2))),
+                    //Note that models for the below improved on the
+                    // above slightly.
+                    distance: round(Math.abs(rectangle.y0 -
+                            params.y_origin) * Math.sqrt(params.m *
+                            params.m + 1)),
+                    rectangle: rectangle
+                });
+                params = getmxb(params, rectangle);
+                console.log("Done with course correction", rectangle);
+                next(edge.y + 1);
+            }).catch(function (error) {
+                console.error(error);
+            });
+            console.log("Performing a course correction", edge, params, htEdges);
+            return;
+        };
 
         getmxb = function (params, rectangle) {
             var i, count, xy_m = 0, x_m = 0, y2_m = 0, y_m = 0, slope,
@@ -167,18 +217,6 @@ hcvGenie.findBands = (function () {
             notfirst = params.linearArr.length;
             for (i = 0; i < rectangle.HTscore / 500 + 1; i += 1) {
                 params.linearArr.push([rectangle.y0, rectangle.x0]);
-                // params.linearArr.push([
-                //     rectangle.y0 + Math.cos(rectangle.theta) *
-                //             rectangle.height / 2,
-                //     rectangle.x0 + Math.sin(rectangle.theta) *
-                //             rectangle.height / 2
-                // ]);
-                // params.linearArr.push([
-                //     rectangle.y0 - Math.cos(rectangle.theta) *
-                //             rectangle.height / 2,
-                //     rectangle.x0 - Math.sin(rectangle.theta) *
-                //             rectangle.height / 2
-                // ]);
             }
             //Before calculating slope we decrease the changes in x to account
             // for pixel granularity
@@ -223,7 +261,8 @@ hcvGenie.findBands = (function () {
             //Note we are trying to write the equation yPos * slope + intercept
             // = xPos. xPos is realitive to left x boarder, yPos is realitive to
             // the top boarder
-            intercept = x_m - slope * (y_m) + slope * params.y_shift - params.x_shift;
+            intercept = x_m - slope * (y_m) + slope * params.y_shift
+                    - params.x_shift;
 
             params.m = slope;
             params.intercept = intercept;
@@ -266,16 +305,19 @@ hcvGenie.findBands = (function () {
             };
         };
 
-        getHTEdgeArr = function (edge, edges, params) {
+        getHTEdgeArr = function (edge, edges, params, vertScale) {
             var ht_x0, ht_y0, ht_width, ht_height, ht_y_buff, ht_edges,
                     x;
+
+            //For verticle transform
+            vertScale = vertScale || 1;
 
             //Found an edge, perform a hough transform
             ht_width = Math.ceil(params.rect_width * rect_dimen_buffer);
             ht_x0 = Math.floor(edge.x - ht_width / 2);
             ht_y_buff = Math.ceil(Math.sin(Math.abs(params.theta)) *
                     ht_width / 2 +
-                    params.rect_height * (rect_dimen_buffer - 1));
+                    params.rect_height * (rect_dimen_buffer - 1)) * vertScale;
             ht_y0 = edge.y - ht_y_buff;
             ht_height = Math.ceil(params.rect_height + ht_y_buff * 2);
             ht_edges = [];
@@ -339,13 +381,9 @@ hcvGenie.findBands = (function () {
                     array: htEdges.array,
                     roundDigit: roundDigit
                 }).then(function (rectangle) {
-                    var centerTheta, centerThetaWeight, pixelCorrection;
-                    centerThetaWeight = (rectangle.y0 + htEdges.y_shift) /
-                            params.y_max * 0;
-
-                    //0.85 weight with distance got an hm score of 93.8251%
-                    //0.65 weight with distance got an hm score of 93.7158%
-                    //0.95 weight with distance got an hm score of 94.3716%
+                    // var pixelCorrection;
+                    // centerThetaWeight = (rectangle.y0 + htEdges.y_shift) /
+                    //         params.y_max * 0;
 
                     //Adjust score as a function of minimum edge
                     rectangle.HTscore = round(rectangle.HTscore /
@@ -355,16 +393,16 @@ hcvGenie.findBands = (function () {
                     rectangle.y0 += params.y_shift + htEdges.y_shift;
 
                     //To account for pixel granularity
-                    pixelCorrection = rectangle.x0 > params.x_origin + 0.5
-                        ? 0.5
-                        : rectangle.x0 < params.x_origin - 0.5
-                            ? -0.5
-                            : 0;
+                    // pixelCorrection = rectangle.x0 > params.x_origin + 0.5
+                    //     ? 0.5
+                    //     : rectangle.x0 < params.x_origin - 0.5
+                    //         ? -0.5
+                    //         : 0;
 
-                    centerTheta = Math.atan2(
-                        (rectangle.x0 - params.x_origin + pixelCorrection),
-                        rectangle.y0 - params.y_origin
-                    );
+                    // centerTheta = Math.atan2(
+                    //     (rectangle.x0 - params.x_origin + pixelCorrection),
+                    //     rectangle.y0 - params.y_origin
+                    // );
 
                     rectangle.width = ((params.greenRectangleScore +
                             params.rectangleScore) * params.rect_width +
@@ -376,11 +414,15 @@ hcvGenie.findBands = (function () {
                             rectangle.height * rectangle.HTscore) /
                             (params.rectangleScore + params.greenRectangleScore
                             + rectangle.HTscore);
-                    rectangle.theta = (params.rectangleScore *
-                            params.theta + rectangle.HTscore *
-                            ((1 - centerThetaWeight) * rectangle.theta +
-                            centerThetaWeight * centerTheta)) /
+                    // rectangle.theta = (params.rectangleScore *
+                    //         params.theta + rectangle.HTscore *
+                    //         ((1 - centerThetaWeight) * rectangle.theta +
+                    //         centerThetaWeight * centerTheta)) /
+                    //         (params.rectangleScore + rectangle.HTscore);
+                    rectangle.theta = (params.rectangleScore * params.theta +
+                            rectangle.theta * rectangle.HTscore) /
                             (params.rectangleScore + rectangle.HTscore);
+
                     params.rectangleScore += rectangle.HTscore;
 
                     rectangle.width = round(rectangle.width);
@@ -421,26 +463,11 @@ hcvGenie.findBands = (function () {
             }
         };
 
-        shiftHorizontally = function (xPos, yPos, edges, params, next) {
-            //Add in a fake rectangle to shift the slope to determine what side
-            // we hit we just
-            var leftEdgeGuess, rightEdgeGuess, distanceTraveled;
-            console.log("Hit a vert edge", xPos, yPos);
-            next(yPos + 1);
-            return;
-            distanceTraveled = round(Math.abs(yPos -
-                    params.y_origin) * Math.sqrt(params.m *
-                    params.m + 1));
-            leftEdgeGuess = Math.asin(params.rect_width / 2 / distanceTraveled);
-            getmxb(params, {});
-            next(yPos);
-        };
-
         walking = function (edges, yPos, params, rectangle) {
-            var walkFunction;
+            var walkFunction, blankCheck = 0.5;
 
             walkFunction = function (yPos) {
-                var xPos, edgeFound = false, xRange, j;
+                var xPos, edgeFound = false, xRange, j, count = 0;
                 //Loop till the end or till an edge is found
                 while (!edgeFound && yPos < params.y_max) {
                     //Calculate mid x position based on parameters
@@ -450,7 +477,6 @@ hcvGenie.findBands = (function () {
                     //0.9530054644808743 with above
 
                     xPos = Math.round(yPos * params.m + params.intercept);
-
                     //Show path being traced
                     myCanvas.fillStyle('#BE5A52');
                     myCanvas.fillRect(Math.round(xPos + params.x_shift),
@@ -463,22 +489,22 @@ hcvGenie.findBands = (function () {
                             edges[xPos + xRange][yPos].direction === 0 &&
                             edges[xPos + xRange][yPos].strength > 0
                         ) {
+                            blankCheck = 0.5;
                             performHoughTransform({x: xPos, y: yPos,
                                     end: false}, edges, params, walkFunction);
                             edgeFound = true;
-                        } else if (
-                            edges[xPos + xRange] &&
-                            edges[xPos + xRange][yPos].direction === 90 &&
-                            edges[xPos + xRange][yPos].strength > 0
-                        ) {
-                            //If we hit a verticle edge then we have gone too
-                            // far to the side
-                            shiftHorizontally(xPos + xRange, yPos,
-                                    edges, params, walkFunction);
-                            edgeFound = true;
                         }
                     }
+
+                    if (count > blankCheck * params.rect_width &&
+                            params.distances.length < 3) {
+                        vertHoughTrans({x: xPos, y: yPos,
+                                end: false}, edges, params, walkFunction);
+                        blankCheck = 1.5;
+                        edgeFound = true;
+                    }
                     yPos += 1;
+                    count += 1;
                 }
                 if (!edgeFound) {
                     //Now set all rectangles to same height/width and create
@@ -572,7 +598,7 @@ hcvGenie.findBands = (function () {
             }
         }());
 
-        return Promise.all(lanePromises).then(function (allLanes) {
+        distancePromise = Promise.all(lanePromises).then(function (allLanes) {
             //calculate the actual lane calls
             var sixScore = 0, sixLimit, i, j, sixCount = 0, call, callArr = [],
                     distance_cont, avgHeight = 0, avgWidth = 0, hwCount = 0;
@@ -594,18 +620,23 @@ hcvGenie.findBands = (function () {
             // called than the remaining, so calculating an average distance
             // across the entire sheet gives us significantly more prediction
             // power.
-
+            console.log('before', JSON.parse(JSON.stringify(allLanes)));
             for (i = 0; i < allLanes.length; i += 1) {
                 sixLimit = (6.5 - distance_constant_band_rat) / distance_cont;
                 for (j = 0; j < allLanes[i].bands.length; j += 1) {
-                    if (allLanes[i].bands[j].distance < sixLimit) {
+                    if (allLanes[i].bands[j].rectangle.bool && 
+                            allLanes[i].bands[j].distance < sixLimit) {
                         call = Math.round(allLanes[i].bands[j].distance *
                                 distance_cont + distance_constant_band_rat);
                         sixScore += allLanes[i].bands[j].distance / call;
                         sixCount += 1;
+                    } else if (!allLanes[i].bands[j].rectangle.bool) {
+                        allLanes[i].bands.splice(j,1);
+                        j -= 1;
                     }
                 }
             }
+            console.log('after', JSON.parse(JSON.stringify(allLanes)));
 
             sixScore /= sixCount;
 
@@ -642,6 +673,12 @@ hcvGenie.findBands = (function () {
                 six_score: sixScore
             };
         });
+
+        // return {
+        //     distances: distancePromise,
+        //     region: region
+        // };
+        return distancePromise;
     };
 
     findGreenRegion = function (canvasObject) {
@@ -792,6 +829,7 @@ hcvGenie.findBands = (function () {
                             roundDigit) / roundDigit;
                     outlineRectangle(rects[i], "#6666ff", myCanvasObject);
                 }
+                console.log('greens!', rects);
                 return rects;
             });
         });
@@ -1207,11 +1245,14 @@ hcvGenie.findBands = (function () {
             return findBandLocations(myCanvasObject, rectangles);
         });
 
+        console.log('distanceMat?', distancesMatrix);
+
         //Assign parts of the return object
         return {
             canvas: canvasElement,
             bandLocationPromise: distancesMatrix,
-            canvasObject: myCanvasObject
+            canvasObject: myCanvasObject,
+            canvasAnalysisRegion: distancesMatrix.region
         };
     };
 

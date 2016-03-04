@@ -16,7 +16,7 @@ var glob, testingObject, answers, ganswers, tests = [], hmScore = 0, hmMax = 0;
     answers = [];
     canvases = [];
     var pchain = Promise.resolve();
-    for (var page = 1; page + 1 < 21; page += 2) {
+    for (var page = 15; page + 1 < 21; page += 2) {
         (function (page) {
             var scale = Math.round((Math.random() * 3 + 2) * 100) / 100,
                 scale2 = Math.round((Math.random() * 3 + 2) * 100) / 100,
@@ -57,6 +57,10 @@ var glob, testingObject, answers, ganswers, tests = [], hmScore = 0, hmMax = 0;
                     glob = res;
 
                     answers[page] = res.bandLocationPromise;
+                    console.log(res);
+                    res.bandLocationPromise.then(function(sol) {
+                        console.log('I think I am done?', sol);
+                    });
 
                     main = document.createElement('div');
                     a = document.createElement('div');
@@ -86,6 +90,7 @@ var glob, testingObject, answers, ganswers, tests = [], hmScore = 0, hmMax = 0;
                 document.body.appendChild(cavArr[i]);
             }
             Promise.all(answers).then(function (sols) {
+                return;
                 var j, k, l, testStr, specialScore, count, sols, scoreArr;
                 ganswers = sols;
                 for (j = 0; j < sols.length; j+= 1) {
