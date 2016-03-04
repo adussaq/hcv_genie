@@ -5,13 +5,14 @@
     var getAndRunSample, $ = jQuery, displayResults, getBandNumbers,
             updateGenotypeCall, getFile,
             //UI Elements
-            textAnswer, /*originalImage,*/ proccessedImg,
+            textAnswer, /*originalImage,*/ proccessedImg, dropRegion,
             //Proccessing Done
             sampleButtonClicked = false;
 
     textAnswer = $('#textResults');
     // originalImage = $('#originalImage'); //Not yet showing
     proccessedImg = $('#imageResults');
+    dropRegion = $('#drop');
 
     getAndRunSample = function () {
         var page = Math.round(Math.random() * 19 + 1);
@@ -128,7 +129,7 @@
 
    //Add button functionality
     (function () {
-        var sampleButton, fromComputerButton;
+        var sampleButton, fromComputerButton, hover = false;
 
         sampleButton = $('#demoFile');
         fromComputerButton = $('#computerFile');
@@ -142,6 +143,7 @@
                 getAndRunSample();
             }
         });
+
         fromComputerButton.change(function (evt) {
             if (!sampleButtonClicked) {
                 textAnswer.empty();
@@ -149,6 +151,35 @@
                 sampleButtonClicked = true;
                 console.log(evt);
                 getFile(evt.target.files[0]);
+            }
+        });
+        dropRegion.on('dragover', function (evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            if (!hover && !sampleButtonClicked) {
+                dropRegion.addClass("hover");
+                hover = true;
+            }
+            return false;
+        });
+        dropRegion.on('dragleave', function (evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            dropRegion.removeClass("hover");
+            hover = false;
+            return false;
+        });
+
+        dropRegion.on('drop', function (evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            dropRegion.removeClass("hover");
+            hover = false;
+            if (!sampleButtonClicked) {
+                textAnswer.empty();
+                proccessedImg.empty();
+                sampleButtonClicked = true;
+                getFile(evt.originalEvent.dataTransfer.files[0]);
             }
         });
     }());
