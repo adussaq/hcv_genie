@@ -134,18 +134,18 @@
         fromComputerButton = $('#computerFile');
         sampleButton.click(function (evt) {
             evt.preventDefault();
-            textAnswer.empty();
-            proccessedImg.empty().text('Grabbing the image from the server, ' +
-                    'this may take a few seconds.');
             if (!sampleButtonClicked) {
+                textAnswer.empty();
+                proccessedImg.empty().text('Grabbing the image from the ' +
+                        'server, this may take a few seconds.');
                 sampleButtonClicked = true;
                 getAndRunSample();
             }
         });
         fromComputerButton.change(function (evt) {
-            textAnswer.empty();
-            proccessedImg.empty();
             if (!sampleButtonClicked) {
+                textAnswer.empty();
+                proccessedImg.empty();
                 sampleButtonClicked = true;
                 console.log(evt);
                 getFile(evt.target.files[0]);

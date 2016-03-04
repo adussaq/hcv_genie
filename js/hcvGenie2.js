@@ -620,7 +620,6 @@ hcvGenie.findBands = (function () {
             // called than the remaining, so calculating an average distance
             // across the entire sheet gives us significantly more prediction
             // power.
-            console.log('before', JSON.parse(JSON.stringify(allLanes)));
             for (i = 0; i < allLanes.length; i += 1) {
                 sixLimit = (6.5 - distance_constant_band_rat) / distance_cont;
                 for (j = 0; j < allLanes[i].bands.length; j += 1) {
@@ -636,7 +635,6 @@ hcvGenie.findBands = (function () {
                     }
                 }
             }
-            console.log('after', JSON.parse(JSON.stringify(allLanes)));
 
             sixScore /= sixCount;
 
@@ -829,7 +827,6 @@ hcvGenie.findBands = (function () {
                             roundDigit) / roundDigit;
                     outlineRectangle(rects[i], "#6666ff", myCanvasObject);
                 }
-                console.log('greens!', rects);
                 return rects;
             });
         });
@@ -1245,8 +1242,6 @@ hcvGenie.findBands = (function () {
             return findBandLocations(myCanvasObject, rectangles);
         });
 
-        console.log('distanceMat?', distancesMatrix);
-
         //Assign parts of the return object
         return {
             canvas: canvasElement,
@@ -1315,7 +1310,6 @@ hcvGenie.genotype = (function () {
         xobj.overrideMimeType("application/json");
         xobj.open('GET', './json/genotypesCurrent.json', true);
         xobj.onreadystatechange = function () {
-            console.log(xobj.readyState, xobj.status, xobj);
             if (xobj.readyState === 4 && xobj.status === 200) {
                 resolve(JSON.parse(xobj.responseText));
 
@@ -1339,7 +1333,6 @@ hcvGenie.genotype = (function () {
             var i, call, thisKey, final;
             for (i = 0; i < bandPattern.length; i += 1) {
                 call = parseInt(bandPattern[i]);
-                console.log(bandPattern[i], call);
                 if (call && !isNaN(call) && call > 2 && call < 27) {
                     binarySolution[call - 3 < 20
                         ? call - 3
