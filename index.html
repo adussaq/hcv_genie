@@ -104,14 +104,30 @@
             <h3 class="text-center">To get started simply click one of the buttons below.<br />(Or drag an image file to the empty square.)</h3>
         </div>
       </div>
-      <div class="row">
-        <div class='col-xs-12 col-sm-6 text-center bottom-buffer'>
-            <span class="btn btn-primary btn-lg btn-file">
-                Open From Computer<input id="computerFile" type="file">
+      <div class="row hidden-xs">
+        <div class='col-xs-12 col-sm-4 text-right bottom-buffer'>
+            <span style="width:211px;" class="btn btn-primary btn-lg btn-file">
+                Open From Computer<input class="computerFile" type="file">
             </span>
         </div>
-        <div class='col-xs-12 col-sm-6 text-center bottom-buffer'>
-            <button id="demoFile" type="button" class="btn btn-info btn-lg">Try one of our Demos</button>
+        <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
+            <button style="width:211px;" type="button" class="demoFile btn btn-info btn-lg">Try one of our Demos</button>
+        </div>
+        <div class='col-xs-12 col-sm-4 text-left bottom-buffer'>
+            <button style="width:211px;" type="button" class="saveFile btn btn-success btn-lg">Generate PDF</button>
+        </div>
+      </div>
+      <div class="row visible-xs-block">
+        <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
+            <span style="width:211px;" class="btn btn-primary btn-lg btn-file">
+                Open From Computer<input class="computerFile" type="file">
+            </span>
+        </div>
+        <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
+            <button style="width:211px;" type="button" class="demoFile btn btn-info btn-lg">Try one of our Demos</button>
+        </div>
+        <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
+            <button style="width:211px;" type="button" class="saveFile btn btn-success btn-lg">Generate PDF</button>
         </div>
       </div>
       <div class="text-center row">
@@ -143,4 +159,6 @@
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <!-- <script src="../../assets/js/ie10-viewport-bug-workaround.js"></script> -->
 <script type="text/javascript" src="./js/hcvGenieUI.min.js"></script>
+<script type="text/javascript" src="./js/jspdf/jspdf.min.js"></script>
+<script type="text/javascript" src="./js/jspdf/rasterizeHTML.allinone.js"></script>
 </html>

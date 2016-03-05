@@ -158,6 +158,8 @@ hcvGenie.findBands = (function () {
                 distances = [], PI_1_180 = Math.PI / 180,
                 rect_dimen_buffer = 1.65, greenRectangleScore = 0,
                 lanePromises = [], getmxb,
+                analysisRegion = {min: [myCanvas.width, myCanvas.height],
+                max: [0, 0], width: myCanvas.width, height: myCanvas.height},
                 //functions
                 determineBoarderParams, performHoughTransform,
                 startEdgeDetection, moveDownLane, walking, getHTEdgeArr,
@@ -300,6 +302,7 @@ hcvGenie.findBands = (function () {
             return {
                 x_shift_left: edgeX,
                 y_shift_down: edgeY,
+                topGreenY: y0 - height * 1.15,
                 width: edgeWidth,
                 height: edgeHeight
             };
@@ -577,6 +580,22 @@ hcvGenie.findBands = (function () {
 
                 //Get edge fitting parameters
                 boarderParams = determineBoarderParams(rectangles[i]);
+                analysisRegion.min[0] = Math.min(
+                    boarderParams.x_shift_left,
+                    analysisRegion.min[0]
+                );
+                analysisRegion.min[1] = Math.min(
+                    boarderParams.topGreenY,
+                    analysisRegion.min[1]
+                );
+                analysisRegion.max[0] = Math.max(
+                    boarderParams.x_shift_left + boarderParams.width,
+                    analysisRegion.max[0]
+                );
+                analysisRegion.max[1] = Math.max(
+                    boarderParams.y_shift_down + boarderParams.height,
+                    analysisRegion.max[1]
+                );
 
                 //perform the edge calculation
                 lanePromises.push(myCanvas.getGaus(
@@ -668,7 +687,8 @@ hcvGenie.findBands = (function () {
                 lanes: allLanes,
                 rect_width: avgWidth,
                 rect_height: avgHeight,
-                six_score: sixScore
+                six_score: sixScore,
+                region: analysisRegion
             };
         });
 
