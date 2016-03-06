@@ -218,16 +218,24 @@
 
         htmlString += fakeDiv.html().replace(/<\/*tbody>/, '');
         realTable = $(htmlString);
-        $(realTable[1]).prop(
-            'style',
-            "width:" + tableWidth + "px;" +
-                    "display:block;visibility:hidden;position:absolute;"
-        );
+        $(realTable[1]).css("width", tableWidth);
+        $(realTable[1]).css("visibility", "hidden");
+        $(realTable[1]).css("position", "absolute");
+        $(realTable[1]).css("display", "block");
+
         $('body').prepend(realTable);
+        // $(realTable[1]).prop(
+        //     'style',
+        //     "width:" + tableWidth + "px; " +
+        //             "visibility:hidden; position:absolute; display:block;"
+        // );
+
 
         tempCanvas = document.createElement('canvas');
+        tempCanvas.setAttribute('crossOrigin', 'anonymous');
         tempCanvas.width = tableWidth + 15;
-        tempCanvas.height = $(realTable[1]).height() + 80; //All this will do 
+        tempCanvas.id = 'tempTableCanvas';
+        tempCanvas.height = $(realTable[1]).height() + 80; //All this will do
                     //is make extra space at the end of the table which will
                     // just be cut off of the bottom of the page.
 
@@ -236,7 +244,7 @@
             tempCanvas
         ).then(function () {
             return {
-                imgURL: tempCanvas.toDataURL(),
+                imgURL: tempCanvas.toDataURL("data:image/svg+xml;utf8"),
                 width: tempCanvas.width,
                 height: tempCanvas.height
             };
@@ -258,7 +266,7 @@
             yPos += height;
             return convertTableToImage();
         }).then(function (table) {
-            return pdf.addImage(table.imgURL, 'png', 20, yPos, 170,
+            return pdf.addImage(table.imgURL, 'svg', 20, yPos, 170,
                     Math.round(170 * table.height / table.width));
         }).then(function () {
             pdf.addPage();
@@ -360,7 +368,7 @@
         fromComputerButton = $('.computerFile');
         saveButton = $('.saveFile');
 
-        if (!window.Blob) {
+        if (!window.Blob || (navigator.userAgent.match(/safari/i) && !navigator.userAgent.match(/chrome/i))) {
             saveButton.hide();
         }
         checkDrag = document.createElement('span');
