@@ -346,11 +346,25 @@
 
    //Add button functionality
     (function () {
-        var sampleButton, fromComputerButton, saveButton, hover = false;
+        var sampleButton, fromComputerButton, saveButton, hover = false,
+                checkDrag;
 
         sampleButton = $('.demoFile');
         fromComputerButton = $('.computerFile');
         saveButton = $('.saveFile');
+
+        if (!window.Blob) {
+            saveButton.hide();
+        }
+        checkDrag = document.createElement('span');
+        if (
+            !'draggable' in checkDrag ||
+            !('ondragleave' in checkDrag &&
+                    'ondragover' in checkDrag &&
+                    'ondrop' in checkDrag)
+        ) {
+            dropRegion.parent().empty();
+        }
 
         sampleButton.click(function (evt) {
             evt.preventDefault();
