@@ -227,7 +227,9 @@
 
         tempCanvas = document.createElement('canvas');
         tempCanvas.width = tableWidth + 15;
-        tempCanvas.height = $(realTable[1]).height() + 35;
+        tempCanvas.height = $(realTable[1]).height() + 80; //All this will do 
+                    //is make extra space at the end of the table which will
+                    // just be cut off of the bottom of the page.
 
         return rasterizeHTML.drawHTML(
             htmlString,
@@ -245,8 +247,13 @@
         var pdf = new jsPDF(), yPos = 20, height, finalRat;
 
         cropCanvas().then(function (img) {
+            var endPos = 170;
             height = Math.round(170 * img.height / img.width);
-            return pdf.addImage(img.imgURL, 'png', 20, yPos, 170, height);
+            if (height > 60) {
+                endPos = 20 + 60 / height * 150;
+                height = 60;
+            }
+            return pdf.addImage(img.imgURL, 'png', 20, yPos, endPos, height);
         }).then(function () {
             yPos += height;
             return convertTableToImage();
