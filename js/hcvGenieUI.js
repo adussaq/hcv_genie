@@ -114,6 +114,7 @@
             }
             sampleButtonClicked = false;
             finished = true;
+            dropRegion.show();
         });
     };
 
@@ -359,6 +360,7 @@
                         'server, this may take a few seconds.');
                 sampleButtonClicked = true;
                 finished = false;
+                dropRegion.hide();
                 getAndRunSample();
             }
         });
@@ -368,7 +370,7 @@
                 proccessedImg.empty();
                 sampleButtonClicked = true;
                 finished = false;
-                console.log(evt);
+                dropRegion.hide();
                 getFile(evt.target.files[0]);
             } else {
                 evt.preventDefault();
@@ -410,6 +412,7 @@
                 proccessedImg.empty();
                 sampleButtonClicked = true;
                 finished = false;
+                dropRegion.hide();
                 getFile(evt.originalEvent.dataTransfer.files[0]);
             }
         });
