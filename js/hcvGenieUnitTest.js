@@ -16,7 +16,7 @@ var glob, testingObject, answers, ganswers, tests = [], hmScore = 0, hmMax = 0;
     answers = [];
     canvases = [];
     var pchain = Promise.resolve();
-    for (var page = 15; page + 1 < 21; page += 2) {
+    for (var page = 1; page + 1 < 21; page += 2) {
         (function (page) {
             var scale = Math.round((Math.random() * 3 + 2) * 100) / 100,
                 scale2 = Math.round((Math.random() * 3 + 2) * 100) / 100,
@@ -90,7 +90,6 @@ var glob, testingObject, answers, ganswers, tests = [], hmScore = 0, hmMax = 0;
                 document.body.appendChild(cavArr[i]);
             }
             Promise.all(answers).then(function (sols) {
-                return;
                 var j, k, l, testStr, specialScore, count, sols, scoreArr;
                 ganswers = sols;
                 for (j = 0; j < sols.length; j+= 1) {
@@ -118,38 +117,70 @@ var glob, testingObject, answers, ganswers, tests = [], hmScore = 0, hmMax = 0;
                             hmMax += testingObject[j][k].bands.length;
                             scoreArr = testingObject[j][k].bands.concat(sols[j].lanes[k].bands.map(function(x){return x.call;}));
                             scoreArr = scoreArr.sort(function(a, b){return a<b?-1:b<a?1:0});
-                            for(l=0; l<scoreArr.length - 1; l+=2){
-                                if (scoreArr[l] === Math.floor(scoreArr[l+1])) {
-                                    hmScore += 1;
-                                } else if ((hmScore[l] * 2) % 2) { //Because 'weak' bands are denoted 4.5, 5.5 etc
-                                    hmScore -= 0.25;
-                                    l -= 1;
-                                } else {
-                                    hmScore -= 0.5;
-                                    l -= 1;
-                                }
-                            }
-                            if (sols[j].lanes[k].bands.length === testingObject[j][k].bands.length) {
-                                for (l = 0; l < sols[j].lanes[k].bands.length; l += 1) {
-                                    tests.push([
-                                        sols[j].lanes[k].bands[l].distance,
-                                        sols[j].lanes[k].bands[l].distance2,
-                                        sols[j].lanes[k].rect_height,
-                                        sols[j].lanes[k].rect_width,
-                                        sols[j].rect_height,
-                                        sols[j].rect_width,
-                                        testingObject[j][k].bands[l],
-                                        sols[j].lanes[k].bands[l].call,
-                                        sols[j].six_score,
-                                        sols[j].lanes[k].genotype,
-                                        testingObject[j][k].call,
-                                        sols[j].lanes[k].bands.map(function(x){return x.call;}).join(','),
-                                        testingObject[j][k].bands.join(','),
-                                        j,
-                                        k
-                                    ]);
-                                }
-                            }
+                            // for(l=0; l<scoreArr.length - 1; l+=2){
+                            //     if (scoreArr[l] === Math.floor(scoreArr[l+1])) {
+                            //         hmScore += 1;
+                            //     } else if ((hmScore[l] * 2) % 2) { //Because 'weak' bands are denoted 4.5, 5.5 etc
+                            //         hmScore -= 0.25;
+                            //         l -= 1;
+                            //     } else {
+                            //         hmScore -= 0.5;
+                            //         l -= 1;
+                            //     }
+                            // }
+                            // if (sols[j].lanes[k].bands.length === testingObject[j][k].bands.length) {
+                            //     for (l = 0; l < sols[j].lanes[k].bands.length; l += 1) {
+                            //         tests.push([
+                            //             sols[j].lanes[k].bands[l].distance,
+                            //             sols[j].lanes[k].bands[l].distance2,
+                            //             sols[j].lanes[k].rect_height,
+                            //             sols[j].lanes[k].rect_width,
+                            //             sols[j].rect_height,
+                            //             sols[j].rect_width,
+                            //             testingObject[j][k].bands[l],
+                            //             sols[j].lanes[k].bands[l].call,
+                            //             sols[j].six_score,
+                            //             sols[j].lanes[k].genotype,
+                            //             testingObject[j][k].call,
+                            //             sols[j].lanes[k].bands.map(function(x){return x.call;}).join(','),
+                            //             testingObject[j][k].bands.join(','),
+                            //             j,
+                            //             k
+                            //         ]);
+                            //     }
+                            // } else {
+                            //     for (l = 0; l < sols[j].lanes[k].bands.length; l += 1) {
+                            //         tests.push([
+                            //             sols[j].lanes[k].bands[l].distance,
+                            //             sols[j].lanes[k].bands[l].distance2,
+                            //             sols[j].lanes[k].rect_height,
+                            //             sols[j].lanes[k].rect_width,
+                            //             sols[j].rect_height,
+                            //             sols[j].rect_width,
+                            //             testingObject[j][k].bands[l],
+                            //             sols[j].lanes[k].bands[l].call,
+                            //             sols[j].six_score,
+                            //             sols[j].lanes[k].genotype,
+                            //             testingObject[j][k].call,
+                            //             sols[j].lanes[k].bands.map(function(x){return x.call;}).join(','),
+                            //             testingObject[j][k].bands.join(','),
+                            //             j,
+                            //             k
+                            //         ]);
+                            //     }
+                            // }
+                            tests.push([
+                                testingObject[j][k].bands.join(','),
+                                sols[j].rect_height,
+                                sols[j].rect_width,
+                                sols[j].six_score,
+                                sols[j].lanes[k].genotype,
+                                testingObject[j][k].call,
+                                sols[j].lanes[k].bands.map(function(x){return x.call;}).join(','),
+                                testingObject[j][k].bands.map(function(x){return Math.floor(x);}).join(','),
+                                j + 1,
+                                k + 1
+                            ]);
                         }
                     } else {
                         console.error('Wrong number of lanes detected in page:' + (j + 1) + 

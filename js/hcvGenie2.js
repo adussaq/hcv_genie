@@ -27,7 +27,7 @@ hcvGenie.findBands = (function () {
             //No need to run this if there aren't at least 4 x areas
             labColorDistMaxArea = labColorSectionSide * labColorSectionSide * 4,
             minGreenDist = 16, minimum_green_edge = 10,
-            minimum_grey_edge = 0.025,
+            minimum_grey_edge = 0.03,
             //The following two sets of data were established using 853 example
             // bands across 10 gels. This was measured by varying the scale
             // uniformly random from 2 to 5 from the pdf sample sent to me.
