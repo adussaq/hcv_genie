@@ -202,12 +202,10 @@ hcvGenie.findBands = (function () {
                     rectangle: rectangle
                 });
                 params = getmxb(params, rectangle);
-                console.log("Done with course correction", rectangle);
                 next(edge.y + 1);
             }).catch(function (error) {
                 console.error(error);
             });
-            console.log("Performing a course correction", edge, params, htEdges);
             return;
         };
 
@@ -840,11 +838,33 @@ hcvGenie.findBands = (function () {
             }
             //calculate average width and height
             return Promise.all(rectanglePromises).then(function (rects) {
+                var j, avgHeight, avgWidth, rem;
+
+                avgHeight = round(rectTotalH / totalRectScore);
+                avgWidth = round(rectTotalW / totalRectScore);
+
+                //Remove possible duplicate Rectangles
                 for (i = 0; i < rects.length; i += 1) {
-                    rects[i].height = Math.round(rectTotalH / totalRectScore *
-                            roundDigit) / roundDigit;
-                    rects[i].width = Math.round(rectTotalW / totalRectScore *
-                            roundDigit) / roundDigit;
+                    for (j = i + 1; j < rects.length; j += 1) {
+                        if (
+                            rects[i].x0 < rects[j].x0 + avgWidth / 2
+                            &&
+                            rects[i].x0 > rects[j].x0 - avgWidth / 2
+                        ) {
+                            rem = rects[i].rectangleScore <
+                                    rects[j].rectangleScore
+                                ? j
+                                : i;
+                            rects.splice(rem, 1);
+                            i -= 1;
+                            j -= 1;
+                        }
+                    }
+                }
+
+                for (i = 0; i < rects.length; i += 1) {
+                    rects[i].height = avgHeight;
+                    rects[i].width = avgWidth;
                     outlineRectangle(rects[i], "#6666ff", myCanvasObject);
                 }
                 return rects;

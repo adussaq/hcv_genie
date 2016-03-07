@@ -7,6 +7,7 @@
             cropCanvas, makePDF,
             //UI Elements
             textAnswer, /*originalImage,*/ proccessedImg, dropRegion,
+            saveButton, sampleButton, fromComputerButton,
             //Proccessing Done
             sampleButtonClicked = false, finished = false,
             //variables
@@ -114,6 +115,9 @@
             }
             sampleButtonClicked = false;
             finished = true;
+            saveButton.toggleClass('disabled');
+            sampleButton.toggleClass('disabled');
+            fromComputerButton.toggleClass('disabled');
             dropRegion.show();
         });
     };
@@ -361,12 +365,13 @@
 
    //Add button functionality
     (function () {
-        var sampleButton, fromComputerButton, saveButton, hover = false,
-                checkDrag;
+        var hover = false, checkDrag, fromComputer;
 
         sampleButton = $('.demoFile');
-        fromComputerButton = $('.computerFile');
+        fromComputer = $('.computerFile');
+        fromComputerButton = $('.computerFileButton');
         saveButton = $('.saveFile');
+        saveButton.toggleClass('disabled');
 
         if (!window.Blob || (navigator.userAgent.match(/safari/i) && !navigator.userAgent.match(/chrome/i))) {
             saveButton.hide();
@@ -398,9 +403,14 @@
                 finished = false;
                 dropRegion.hide();
                 getAndRunSample();
+                if (!saveButton.hasClass('disabled')) {
+                    saveButton.toggleClass('disabled');
+                }
+                sampleButton.toggleClass('disabled');
+                fromComputerButton.toggleClass('disabled');
             }
         });
-        fromComputerButton.change(function (evt) {
+        fromComputer.change(function (evt) {
             if (!sampleButtonClicked) {
                 textAnswer.empty();
                 proccessedImg.empty();
@@ -408,6 +418,11 @@
                 finished = false;
                 dropRegion.hide();
                 getFile(evt.target.files[0]);
+                if (!saveButton.hasClass('disabled')) {
+                    saveButton.toggleClass('disabled');
+                }
+                sampleButton.toggleClass('disabled');
+                fromComputerButton.toggleClass('disabled');
             } else {
                 evt.preventDefault();
             }
@@ -446,6 +461,11 @@
             if (!sampleButtonClicked) {
                 textAnswer.empty();
                 proccessedImg.empty();
+                if (!saveButton.hasClass('disabled')) {
+                    saveButton.toggleClass('disabled');
+                }
+                sampleButton.toggleClass('disabled');
+                fromComputerButton.toggleClass('disabled');
                 sampleButtonClicked = true;
                 finished = false;
                 dropRegion.hide();
