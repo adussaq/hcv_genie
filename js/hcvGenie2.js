@@ -1,5 +1,7 @@
 /*global amd_ww, hcvGenie, PDFJS console, document, checkPromises, jQuery*/
 var hcvGenie = {};
+var medianSignals = [];
+var posDistances = [];
 hcvGenie.findBands = (function () {
     'use strict';
 
@@ -26,8 +28,8 @@ hcvGenie.findBands = (function () {
                                       // fastest
             //No need to run this if there aren't at least 4 x areas
             labColorDistMaxArea = labColorSectionSide * labColorSectionSide * 4,
-            minGreenDist = 16, minimum_green_edge = 10,
-            minimum_grey_edge = 0.03,
+            minGreenDist = 15, minimum_green_edge = 10,
+            minimum_grey_edge = 0.025,
             //The following two sets of data were established using 853 example
             // bands across 10 gels. This was measured by varying the scale
             // uniformly random from 2 to 5 from the pdf sample sent to me.
@@ -46,7 +48,11 @@ hcvGenie.findBands = (function () {
             distance2_height_band_rat = 0.009150503777635,
             distance2_width_band_rat = 0.254982069800913,
             distance2_sixScore_band_rat = 0.822512153640132,
-            minimumMedianGrey = 0.015,
+            minimumMedianGrey = 0.145,
+                // For 20 pages the results were as follows (Min Grey Edge 0.025)
+                // 0.125 -> {falsePos: 2, falseNeg: 22, truePos: 1921, totalCalls: 1948}
+                // 0.145 -> {falsePos: 2, falseNeg: 22, truePos: 1922, totalCalls: 1948}
+                // corrected list {falsePos: 12, falseNeg: 44, truePos: 1902, totalCalls: 1970}
 
     //Global Objects
             colorDistanceWorker, houghTransformWorker, edgeDetectionWorker,
@@ -318,7 +324,7 @@ hcvGenie.findBands = (function () {
             ht_x0 = Math.floor(edge.x - ht_width / 2);
             ht_y_buff = Math.ceil(Math.sin(Math.abs(params.theta)) *
                     ht_width / 2 +
-                    params.rect_height * (rect_dimen_buffer - 1)) * vertScale;
+                    params.rect_height * (rect_dimen_buffer - 1.4)) * vertScale;
             ht_y0 = edge.y - ht_y_buff;
             ht_height = Math.ceil(params.rect_height + ht_y_buff * 2);
             ht_edges = [];
@@ -490,18 +496,17 @@ hcvGenie.findBands = (function () {
                             edges[xPos + xRange][yPos].direction === 0 &&
                             edges[xPos + xRange][yPos].strength > 0
                         ) {
-                            blankCheck = 0.5;
+                            blankCheck = 0.95 * (params.distances.length + 1);
                             performHoughTransform({x: xPos, y: yPos,
                                     end: false}, edges, params, walkFunction);
                             edgeFound = true;
                         }
                     }
 
-                    if (count > blankCheck * params.rect_width &&
-                            params.distances.length < 3) {
+                    if (count > blankCheck * params.rect_width) {
                         vertHoughTrans({x: xPos, y: yPos,
                                 end: false}, edges, params, walkFunction);
-                        blankCheck = 1.5;
+                        blankCheck = 1.5 + 0.95 * (params.distances.length);
                         edgeFound = true;
                     }
                     yPos += 1;
@@ -707,6 +712,7 @@ hcvGenie.findBands = (function () {
             for (x = 0; x < w; x += 1) {
                 for (y = 0; y < h; y += 1) {
                     if (arr[x][y] < minGreenDist) {
+                        posDistances.push(arr[x][y]);
                         boarder[0][0] = Math.min(x * depth, boarder[0][0]);
                         boarder[0][1] = Math.min(y * depth, boarder[0][1]);
                         boarder[1][0] = Math.max(x * depth, boarder[1][0]);
@@ -789,10 +795,16 @@ hcvGenie.findBands = (function () {
             medianH = calculateMedian(heights);
             medianW = calculateMedian(widths);
 
-            //Remove non rectangles (small pixel formations)
+            //Remove non rectangles (small and too large pixel formations)
             for (i = 0; i < shapeBoarders.length; i += 1) {
-                if (shapeBoarders[i].width > medianW / 2 //Height is smaller
-                        && shapeBoarders[i].height > medianH / 4) {
+                if (
+                    //First is to make sure they are not too small
+                    (shapeBoarders[i].width > medianW / 2
+                            && shapeBoarders[i].height > medianH / 4)
+                    && //And not too big
+                    (shapeBoarders[i].width < medianW * 2
+                            && shapeBoarders[i].height < medianH * 4)
+                ) {
                     //Save actual shapes in new format
                     shapes.push({
                         height: shapeBoarders[i].height,
@@ -856,7 +868,6 @@ hcvGenie.findBands = (function () {
                                 ? j
                                 : i;
                             rects.splice(rem, 1);
-                            i -= 1;
                             j -= 1;
                         }
                     }
@@ -878,7 +889,7 @@ hcvGenie.findBands = (function () {
                 yStart, xStart, yFin, xFin,
                 x_min_bound, y_min_bound,
                 x_max_bound, y_max_bound;
-        shapeMat[xi][yi] = minGreenDist * 2;
+        shapeMat[xi][yi] = minGreenDist * 3.5;
         yB[yi] = [xi, xi];
         xB[xi] = [yi, yi];
 
@@ -914,7 +925,7 @@ hcvGenie.findBands = (function () {
                     for (yp = yStart; yp < yFin + 1; yp += 1) {
                         if (xp > 0 && yp > 0 && xp < shapeMat.length &&
                                 yp < shapeMat[xp].length) {
-                            if (shapeMat[xp][yp] < minGreenDist * 1.05) {
+                            if (shapeMat[xp][yp] < minGreenDist * 1) {
                                 // Save result
                                 res.ys.push(yp);
                                 res.xs.push(xp);
@@ -972,13 +983,20 @@ hcvGenie.findBands = (function () {
 
         return myCanvas.getGrey(xs, ys,
                 w, h, 1).then(function (arr) {
-            var greys = [], x, y;
+            var greys = [], x, y, count = 0, total = 0, median;
             for (x = 0; x < arr.length; x += 1) {
                 for (y = 0; y < arr[0].length; y += 1) {
                     greys.push(arr[x][y]);
+                    total += arr[x][y];
+                    count += 1;
                 }
             }
-            return calculateMedian(greys);
+            median = calculateMedian(greys);
+            medianSignals.push([median, total / count, median * count / total]);
+            median = median < 0.003
+                ? 0
+                : median * count / total;
+            return median;
         });
     };
 
