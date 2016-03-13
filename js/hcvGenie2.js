@@ -44,15 +44,14 @@ hcvGenie.findBands = (function () {
             distance_height_band_rat = 0.116001002429100,
             distance_width_band_rat = 1.255947650078826,
             //Post better six score calc
-            distance2_constant_band_rat = 0.003233394220093,
-            distance2_height_band_rat = 0.009150503777635,
-            distance2_width_band_rat = 0.254982069800913,
-            distance2_sixScore_band_rat = 0.822512153640132,
+            distance2_constant_band_rat = 0.004844371294825,
+            distance2_height_band_rat = -0.050834339328904,
+            distance2_width_band_rat = 0.150816456427006,
+            distance2_sixScore_band_rat = 1.009819205853457,
             minimumMedianGrey = 0.145,
                 // For 20 pages the results were as follows (Min Grey Edge 0.025)
-                // 0.125 -> {falsePos: 2, falseNeg: 22, truePos: 1921, totalCalls: 1948}
-                // 0.145 -> {falsePos: 2, falseNeg: 22, truePos: 1922, totalCalls: 1948}
-                // corrected list {falsePos: 12, falseNeg: 44, truePos: 1902, totalCalls: 1970}
+                //pgs 1-20 after list correction 1:
+                // {falsePos: 2, falseNeg: 36, truePos: 1822, trueNeg: 5065, possibleBands: 6925}
 
     //Global Objects
             colorDistanceWorker, houghTransformWorker, edgeDetectionWorker,
@@ -458,7 +457,8 @@ hcvGenie.findBands = (function () {
                                         params.m + 1)),
                                 rectangle: rectangle
                             });
-                            next(Math.floor(edge.y + params.rect_height * 1.55));
+                            //Just upped to 1.555 from 1.55 to try and skip a double call
+                            next(Math.floor(edge.y + params.rect_height * 1.555));
                         } else {
                             next(Math.floor(edge.y + 2));
                         }

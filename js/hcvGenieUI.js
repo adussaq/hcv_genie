@@ -1,4 +1,5 @@
 /*global amd_ww, jsPDF, rasterizeHTML, window, FileReader, hcvGenie, PDFJS console, document, checkPromises, jQuery*/
+var glob;
 (function () {
     'use strict';
         //functions
@@ -19,12 +20,12 @@
     dropRegion = $('#drop');
 
     getAndRunSample = function () {
-        var page = Math.round(Math.random() * 19 + 1);
+        var page = Math.round(Math.random() * 46 + 1);
         hcvGenie.findBands({
             image: {
                 type: 'pdf',
                 pageNumber: 1,
-                url: './dataExamples/pages/samples1-20_page' + page + '.pdf',
+                url: './dataExamples/pages/page' + page + '.pdf',
                 scale: 2.25
             }
         }).then(displayResults);
@@ -93,7 +94,7 @@
                 all: false,
                 region: results.region
             });
-
+            glob = results;
             //make table and insert the results
             table = $('<table class="table table-hover" style="width:100%">');
             table.appendTo(textAnswer);
