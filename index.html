@@ -68,90 +68,114 @@
     <script type="text/javascript" src="./js/hcvGenie2.js"></script> 
 </head>
 <body>
+  <div class="tabbable">
   <nav class="navbar navbar-default navbar-fixed-top">
       <div class="container">
         <div class="navbar-header">
           <a class="navbar-brand" href="#">HCV Genie</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-            <li class="active"><a href="#">Home</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#contact">Contact</a></li>
+          <ul class="nav navbar-nav nav-tabs">
+            <li class="active"><a id="tag1" href="#home" data-toggle="tab">Home</a></li>
+            <li id="tag2" ><a href="#about" data-toggle="tab">About</a></li>
+            <li><a id="tag3" href="#contact" data-toggle="tab">Contact</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
 
-    <div class="container">
-      <!-- Main component for a primary marketing message or call to action -->
-      <div class="row">
-        <div class='col-xs-12'>
-            <div class="jumbotron">
-              <!-- Announcement Header -->
-              <h1 class="text-center">HCV Genie</h1>
-              <h2 class="text-center">
-                A HIPAA Compliant, Automated Interpreter
-                <br />
-                for Siemmans Versant HCV Genotype LiPAs
-              </h2>
-              <h3 class="text-center">Presented by UAB Pathology</h3>
+    <div class="tab-content" id="tabs">
+        <div class="tab-pane fade active in container" id="home">
+          <!-- Main component for a primary marketing message or call to action -->
+          <div class="row">
+            <div class='col-xs-12'>
+                <div class="jumbotron">
+                  <!-- Announcement Header -->
+                  <h1 class="text-center">HCV Genie</h1>
+                  <h2 class="text-center">
+                    A HIPAA Compliant, Automated Interpreter
+                    <br />
+                    for Siemmans Versant HCV Genotype LiPAs
+                  </h2>
+                  <h3 class="text-center">Presented by UAB Pathology</h3>
+                </div>
+            </div>
+          </div>
+          <div class="row bottom-buffer">
+            <div class='col-xs-12'>
+                <h3 class="text-center">To get started simply click one of the buttons below.<br />(Or drag an image file to the empty square.)</h3>
+            </div>
+          </div>
+          <div class="row hidden-xs">
+            <div class='col-xs-12 col-sm-4 text-right bottom-buffer'>
+                <span style="width:211px;" class="btn computerFileButton btn-primary btn-lg btn-file">
+                    Open From Computer<input class="computerFile" type="file">
+                </span>
+            </div>
+            <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
+                <button style="width:211px;" type="button" class="demoFile btn btn-info btn-lg">Try one of our Demos</button>
+            </div>
+            <div class='col-xs-12 col-sm-4 text-left bottom-buffer'>
+                <button style="width:211px;" type="button" class="saveFile btn btn-success btn-lg">Generate PDF</button>
+            </div>
+          </div>
+          <div class="row visible-xs-block">
+            <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
+                <span style="width:211px;" class="btn computerFileButton btn-primary btn-lg btn-file">
+                    Open From Computer<input class="computerFile" type="file">
+                </span>
+            </div>
+            <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
+                <button style="width:211px;" type="button" class="demoFile btn btn-info btn-lg">Try one of our Demos</button>
+            </div>
+            <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
+                <button style="width:211px;" type="button" class="saveFile btn btn-success btn-lg">Generate PDF</button>
+            </div>
+          </div>
+          <div class="text-center row">
+            <div class='text-center col-xs-12'>
+                <div id="drop">
+                    <div style="margin-top: 40px;">Drop File Here</div>
+                </div>
+            </div>
+          </div>
+          <div class="row">
+            <div id="textResults" class='col-xs-12'>
+            </div>
+          </div>
+          <div class="row">
+            <div id="imageResults" class='col-xs-12'>
+            </div>
+          </div>
+          <div class="row">
+            <div id="originalImage" class='col-xs-12'>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade container" id="about">
+            <div class="row">
+                 <div class='col-xs-12'>
+                     <div class="jumbotron">
+                        <h3>
+                        Coming Soon...
+                        </h3>
+                    </div>
+                 </div>
             </div>
         </div>
-      </div>
-      <div class="row bottom-buffer">
-        <div class='col-xs-12'>
-            <h3 class="text-center">To get started simply click one of the buttons below.<br />(Or drag an image file to the empty square.)</h3>
-        </div>
-      </div>
-      <div class="row hidden-xs">
-        <div class='col-xs-12 col-sm-4 text-right bottom-buffer'>
-            <span style="width:211px;" class="btn computerFileButton btn-primary btn-lg btn-file">
-                Open From Computer<input class="computerFile" type="file">
-            </span>
-        </div>
-        <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
-            <button style="width:211px;" type="button" class="demoFile btn btn-info btn-lg">Try one of our Demos</button>
-        </div>
-        <div class='col-xs-12 col-sm-4 text-left bottom-buffer'>
-            <button style="width:211px;" type="button" class="saveFile btn btn-success btn-lg">Generate PDF</button>
-        </div>
-      </div>
-      <div class="row visible-xs-block">
-        <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
-            <span style="width:211px;" class="btn computerFileButton btn-primary btn-lg btn-file">
-                Open From Computer<input class="computerFile" type="file">
-            </span>
-        </div>
-        <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
-            <button style="width:211px;" type="button" class="demoFile btn btn-info btn-lg">Try one of our Demos</button>
-        </div>
-        <div class='col-xs-12 col-sm-4 text-center bottom-buffer'>
-            <button style="width:211px;" type="button" class="saveFile btn btn-success btn-lg">Generate PDF</button>
-        </div>
-      </div>
-      <div class="text-center row">
-        <div class='text-center col-xs-12'>
-            <div id="drop">
-                <div style="margin-top: 40px;">Drop File Here</div>
+        <div class="tab-pane fade container" id="contact">
+            <div class="row">
+                 <div class='col-xs-12'>
+                     <div class="jumbotron">
+                        <h3><a href:"mailto:ADussaq@uab.edu">ADussaq@uab.edu</a> <br />
+                        <a href:"http://AlexDussaq.info">AlexDussaq.info</a>
+                        </h3>
+                    </div>
+                 </div>
             </div>
         </div>
-      </div>
-      <div class="row">
-        <div id="textResults" class='col-xs-12'>
-        </div>
-      </div>
-      <div class="row">
-        <div id="imageResults" class='col-xs-12'>
-        </div>
-      </div>
-      <div class="row">
-        <div id="originalImage" class='col-xs-12'>
-        </div>
-      </div>
-    </div>
-
-
+  </div>
 </body>
 <!-- Load UI Scripts -->
 <script type="text/javascript" src="./js/bootstrap/jquery-2.1.4.min.js"></script>

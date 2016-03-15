@@ -474,4 +474,23 @@ var glob;
             }
         });
     }());
+
+    //Set up tabs
+    (function () {
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            var target = $(e.target).attr("href") // activated tab
+            if (target !== '#home') {
+                window.location.hash = target;
+            } else {
+                window.location.hash = "";
+            }
+            window.scrollTo(0, 0);
+        });
+    }());
+    window.onload = function () {
+        window.scrollTo(0, 0);
+        if (window.location.hash) {
+            $('a[href="' + window.location.hash + '"]').click();
+        }
+    };
 }());
