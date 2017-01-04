@@ -81,6 +81,7 @@
     distLAB = function (color1, color2) {
         //Delta E adapted from
             //www.brucelindbloom.com/index.html?ColorDifferenceCalcHelp.html
+            //http://www.brucelindbloom.com/index.html?Eqn_DeltaE_CIE2000.html
         var dist, L1 = color1[0], L2 = color2[0],
                 a1 = color1[1], a2 = color2[1],
                 b1 = color1[2], b2 = color2[2],
