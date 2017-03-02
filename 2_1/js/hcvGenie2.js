@@ -1790,7 +1790,7 @@ hcvGenie.findBands = (function () {
         var getMousePos, walked = {}, rectangles = {}, checkPosition,
                 width = 0, height = 0, rectCount = 1e-50, //fix divide by 0
                 popup_band, popup_blank, $modal, createBlankPopup,
-                canvasObject;
+                canvasObject, responding = false;
         getMousePos = function ($canvas, evt) {
             var rect = $canvas.getBoundingClientRect(), // abs. size of element
                 scaleX = $canvas.width / rect.width,    // relationship bitmap vs. element for X
@@ -2105,32 +2105,38 @@ hcvGenie.findBands = (function () {
             return function (evt) {
                 var pos, hit;
                 evt.preventDefault();
+                if (!responding) {
+                    responding = true;
+                    canvasObject = canvasObj;
 
-                canvasObject = canvasObj;
+                    //create the popup element if it has not already been made
+                    createBlankPopup();
 
-                //create the popup element if it has not already been made
-                createBlankPopup();
+                    //This gets the x/y coordinates of the click event
+                    pos = getMousePos(canvasElement, evt);
 
-                //This gets the x/y coordinates of the click event
-                pos = getMousePos(canvasElement, evt);
+                    //This finds what is the closest neighbor
+                    hit = checkPosition(pos);
 
-                //This finds what is the closest neighbor
-                hit = checkPosition(pos);
-
-                //Make a modal popup for the nearest neighbor
-                if (hit) {
-                    if (hit.length > 2) {
-                        popup_band(hit);
-                    } else {
-                        popup_blank(hit, pos);
+                    //Make a modal popup for the nearest neighbor
+                    if (hit) {
+                        if (hit.length > 2) {
+                            popup_band(hit);
+                        } else {
+                            popup_blank(hit, pos);
+                        }
                     }
+
+                    //If there is no hit, then do not respond
+
+                    console.log(hit);
+
+                    setTimeout(function () {
+                        responding = false;
+                    }, 50);
+
+                    return pos;
                 }
-
-                //If there is no hit, then do not respond
-
-                console.log(hit);
-
-                return pos;
             };
         };
     }());
@@ -2147,6 +2153,7 @@ hcvGenie.findBands = (function () {
 
         //Add in the click response stuff
         $(canvasElement).parent().click(respondToClick(canvasElement, myCanvasObject));
+        $(canvasElement).parent().children().click(respondToClick(canvasElement, myCanvasObject));
 
         //Find the region of the canvas in which there are green bands
         greenRegionPromise = findGreenRegion(myCanvasObject).then(
