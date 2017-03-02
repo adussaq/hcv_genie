@@ -117,6 +117,8 @@
             theta: finalTheta,
             HTscore: peaks.vert.distPos[2] + peaks.vert.distNeg[2] +
                     peaks.horz.distPos[2] + peaks.horz.distNeg[2],
+            HT_vert: [peaks.vert.distPos[2], peaks.vert.distNeg[2]],
+            HT_horz: [peaks.horz.distPos[2], peaks.horz.distNeg[2]],
             bool: true
         };
     };

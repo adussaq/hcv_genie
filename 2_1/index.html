@@ -19,6 +19,27 @@
         .bottom-buffer {
             margin-bottom:20px;
         }
+
+        .my-img-thumbnail {
+            /*display: inline-block;*/
+            max-width: 100%;
+            height: auto;
+            /*padding: 4px;*/
+            line-height: 2.42857143;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            -webkit-transition: all .2s ease-in-out;
+            -o-transition: all .2s ease-in-out;
+            transition: all .2s ease-in-out;
+        }
+        .affix {
+            top: 50px;
+            width: inherit;
+            background-color: #fff;
+            z-index: 10;
+            overflow-x: hidden;
+        }
         /*Below is to wrap the file upload in a button*/
         .btn-file {
             position: relative;
@@ -149,12 +170,14 @@
                 </div>
             </div>
           </div>
-          <div class="row">
-            <div id="textResults" class='col-xs-12'>
+          <div>
+            <div id="fixer">
+              <div class="" id="imageResults">
+              </div>
             </div>
           </div>
           <div class="row">
-            <div id="imageResults" class='col-xs-12'>
+            <div id="textResults" class='col-xs-12'>
             </div>
           </div>
           <div class="row">
@@ -192,7 +215,7 @@
 <script src="../js/bootstrap/bootstrap.min.js"></script>
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <!-- <script src="../../assets/js/ie10-viewport-bug-workaround.js"></script> -->
-<script type="text/javascript" src="./js/hcvGenieUI.js"></script>
 <script type="text/javascript" src="../js/jspdf/jspdf.min.js"></script>
 <script type="text/javascript" src="../js/jspdf/rasterizeHTML.allinone.js"></script>
+<script type="text/javascript" src="./js/hcvGenieUI.js"></script>
 </html>

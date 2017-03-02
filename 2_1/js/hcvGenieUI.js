@@ -1,11 +1,11 @@
 /*global amd_ww, jsPDF, rasterizeHTML, window, FileReader, hcvGenie, PDFJS console, document, checkPromises, jQuery*/
-var glob;
+var glob, global2 = [];
 (function () {
     'use strict';
         //functions
     var getAndRunSample, $ = jQuery, displayResults, getBandNumbers,
             updateGenotypeCall, getFile, convertTableToImage, scaleCanvas,
-            cropCanvas, makePDF,
+            cropCanvas, makePDF, createTable,
             //UI Elements
             textAnswer, /*originalImage,*/ proccessedImg, dropRegion,
             saveButton, sampleButton, fromComputerButton,
@@ -17,6 +17,39 @@ var glob;
     textAnswer = $('#textResults');
     // originalImage = $('#originalImage'); //Not yet showing
     proccessedImg = $('#imageResults');
+    var parentOfImg = $('#fixer');
+    parentOfImg.on('affix.bs.affix', function () {
+        parentOfImg.parent().css("min-height", proccessedImg.height());
+        parentOfImg.css("max-width", proccessedImg.width());
+    });
+    parentOfImg.affix({
+        offset: {
+            top: parentOfImg.offset().top - 51
+        }
+    });
+
+    //set on resize?
+    window.onresize = function () {
+        //essentially to deal with the resize of the page we have to destory
+        // the old affix point and create a new one... Here it is.
+        var temp = $('<div id="fixer"></div>');
+        proccessedImg.detach().appendTo(temp);
+        temp.appendTo(parentOfImg.parent());
+        parentOfImg.remove();
+        parentOfImg = temp;
+        parentOfImg.on('affix.bs.affix', function () {
+            parentOfImg.parent().css("min-height", proccessedImg.height());
+            parentOfImg.css("max-width", proccessedImg.width());
+        });
+        parentOfImg.affix({
+            offset: {
+                top: parentOfImg.offset().top - 51
+            }
+        });
+        parentOfImg.parent().css("min-height", proccessedImg.height());
+        parentOfImg.css("max-width", proccessedImg.width());
+    };
+
     dropRegion = $('#drop');
 
     getAndRunSample = function () {
@@ -27,7 +60,8 @@ var glob;
                 pageNumber: 1,
                 url: 'http://127.0.0.1:8000/dataExamples/pages/page' + page + '.pdf',
                 scale: 2.25
-            }
+            },
+            onchange: createTable
         }).then(displayResults);
     };
 
@@ -57,7 +91,7 @@ var glob;
 
             //Only do anything if every number is recognized
             if (banding.match(/^[\s,\d]+$/)) {
-                bandArr = banding.split(/,/);
+                bandArr = banding.split(/,|\s|;/);
                 hcvGenie.genotype(bandArr).then(function (res) {
                     console.log(res);
                     $('#' + bandObj.genotype_id).text(res);
@@ -68,6 +102,8 @@ var glob;
 
     displayResults = function (hcvG_results) {
         //Display original canvas:
+        var bandingObj;
+        console.log(hcvG_results);
         scaleCanvas({
             canvas: $(hcvG_results.canvas),
             all: true
@@ -85,35 +121,24 @@ var glob;
         // });
 
         //Update band locations
-        hcvG_results.bandLocationPromise.then(function (results) {
-            var lane, table, band, row;
-            console.log('here', results.lanes, results.region);
+        hcvG_results.bandingPromise.then(function (temp) {
+            bandingObj = temp;
+            return bandingObj.lanePromise;
+        }).then(function (results) {
+            console.log('here', results.lanes(), results.region, hcvG_results);
+
+            //temporary until functions are linked together...
+
             //Shift the analysis region
             scaleCanvas({
                 canvas: $(hcvG_results.canvas),
                 all: false,
                 region: results.region
             });
-            glob = results;
+            glob = bandingObj;
             //make table and insert the results
-            table = $('<table class="table table-hover" style="width:100%">');
-            table.appendTo(textAnswer);
-            table.append($('<tr><th style="width:10%">Lane</th>' +
-                    '<th style="width:30%">Genotype</th>' +
-                    '<th style="width:60%">Banding Pattern</th></tr>'));
-            for (lane = 0; lane < results.lanes.length; lane += 1) {
-                band = getBandNumbers(results.lanes[lane].bands);
-                row = $('<tr>', {
-                    html: '<td>' + (lane + 1) + '</td>' +
-                            '<td id="' + band.genotype_id + '">' +
-                            results.lanes[lane].genotype + '</td>' +
-                            '<td>' +
-                            band.string + '</td></th>'
-                });
-                table.append(row);
-                resultsTable.push(row);
-                $('#' + band.form_id).keyup(updateGenotypeCall(band));
-            }
+            createTable(results.lanes());
+
             sampleButtonClicked = false;
             finished = true;
             saveButton.toggleClass('disabled');
@@ -121,6 +146,31 @@ var glob;
             fromComputerButton.toggleClass('disabled');
             dropRegion.show();
         });
+    };
+
+    createTable = function (lanes) {
+        var lane, table, band, row;
+
+        table = $('<table class="table table-hover" style="width:100%">');
+        textAnswer.empty();
+        textAnswer.append('<p>*<em>To change band calls begin by interacting with the image. Any changes to the table below will only be indicated in the report. Any changes done to the image will overwrite changes performed on the table in favor of the image state.</em></p>');
+        table.appendTo(textAnswer);
+        table.append($('<tr><th style="width:10%">Lane</th>' +
+                '<th style="width:30%">Genotype</th>' +
+                '<th style="width:60%">Banding Pattern</th></tr>'));
+        for (lane = 0; lane < lanes.length; lane += 1) {
+            band = getBandNumbers(lanes[lane].bands);
+            row = $('<tr>', {
+                html: '<td>' + (lane + 1) + '</td>' +
+                        '<td id="' + band.genotype_id + '">' +
+                        lanes[lane].genotype + '</td>' +
+                        '<td>' +
+                        band.string + '</td></th>'
+            });
+            table.append(row);
+            resultsTable.push(row);
+            $('#' + band.form_id).keyup(updateGenotypeCall(band));
+        }
     };
 
     cropCanvas = function () {
@@ -303,14 +353,16 @@ var glob;
                             pageNumber: 1,
                             url: url,
                             scale: 2.25
-                        }
+                        },
+                        onchange: createTable
                     }).then(displayResults);
                 } else {
                     hcvGenie.findBands({
                         image: {
                             type: 'png',
                             url: url
-                        }
+                        },
+                        onchange: createTable
                     }).then(displayResults);
                 }
             };
@@ -326,6 +378,7 @@ var glob;
         var resize;
         if (obj.all) {
             resize = function () {
+                //Resets for a new image coming in...
                 proccessedImg.empty();
                 proccessedImg.css("overflow", "");
                 proccessedImg.css("height", "");
@@ -337,19 +390,22 @@ var glob;
         } else {
             resize = function () {
                 var width, widthRat, imgBuff, imgWidth, top, height;
-                proccessedImg.empty();
+                // proccessedImg.empty();
                 width = proccessedImg.width();
                 imgBuff = Math.min(
                     obj.region.min[0],
                     obj.region.width - obj.region.max[0]
                 );
+
                 imgWidth = obj.region.width - 2 * imgBuff;
                 widthRat = width / imgWidth;
                 top = -1 * obj.region.min[1] * widthRat;
                 height = (obj.region.max[1] - obj.region.min[1]) *
                         widthRat;
                 proccessedImg.css("overflow", "hidden");
+                proccessedImg.css("position", "relative");
                 proccessedImg.css("height", height);
+                proccessedImg.attr("class", "my-img-thumbnail");
                 proccessedImg.append(
                     obj.canvas.width(width + 2 * imgBuff * widthRat)
                 );
@@ -478,7 +534,7 @@ var glob;
     //Set up tabs
     (function () {
         $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            var target = $(e.target).attr("href") // activated tab
+            var target = $(e.target).attr("href"); // activated tab
             if (target !== '#home') {
                 window.location.hash = target;
             } else {
