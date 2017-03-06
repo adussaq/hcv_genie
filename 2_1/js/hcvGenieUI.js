@@ -174,8 +174,9 @@ var glob, global2 = [];
     };
 
     cropCanvas = function () {
-        var tempCanvas, oldCanvas, ctx;
-        oldCanvas = $(proccessedImg.children()[0]);
+        var tempCanvas, ctx, mainPart = $(proccessedImg.children()[0]),
+                oldCanvas = $(proccessedImg.children().children()[0]),
+                drawCanvas = $(proccessedImg.children().children()[1]);
 
         tempCanvas = document.createElement('canvas');
         tempCanvas.width = proccessedImg.width();
@@ -183,10 +184,18 @@ var glob, global2 = [];
         ctx = tempCanvas.getContext('2d');
         ctx.drawImage(
             oldCanvas[0],
-            oldCanvas.css('margin-left').replace(/px/, ""),
-            oldCanvas.css('margin-top').replace(/px/, ""),
-            oldCanvas.css('width').replace(/px/, ""),
-            oldCanvas.css('width').replace(/px/, "") *
+            mainPart.css('margin-left').replace(/px/, ""),
+            mainPart.css('margin-top').replace(/px/, ""),
+            mainPart.css('width').replace(/px/, ""),
+            mainPart.css('width').replace(/px/, "") *
+                    oldCanvas.height() / oldCanvas.width()
+        );
+        ctx.drawImage(
+            drawCanvas[0],
+            mainPart.css('margin-left').replace(/px/, ""),
+            mainPart.css('margin-top').replace(/px/, ""),
+            mainPart.css('width').replace(/px/, ""),
+            mainPart.css('width').replace(/px/, "") *
                     oldCanvas.height() / oldCanvas.width()
         );
 
@@ -332,7 +341,7 @@ var glob, global2 = [];
                 11 / 8.5
             );
 
-            return pdf.addImage(proccessedImg.children()[0].toDataURL(), 'png',
+            return pdf.addImage(proccessedImg.children().children()[0].toDataURL(), 'png',
                     0, 0, 210, 210 * finalRat);
         }).then(function () {
             pdf.save(filename);

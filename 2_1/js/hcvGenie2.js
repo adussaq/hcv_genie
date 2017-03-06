@@ -2103,6 +2103,7 @@ hcvGenie.findBands = (function () {
         //Driver function
         respondToClick = function (canvasElement, canvasObj) {
             return function (evt) {
+                console.log(evt.currentTarget)
                 var pos, hit;
                 evt.preventDefault();
                 if (!responding) {
