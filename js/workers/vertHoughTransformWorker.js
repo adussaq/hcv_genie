@@ -11,6 +11,20 @@
                 PI_7_12 = 7 * Math.PI / 12,
                 PI_1_12 = 1 * Math.PI / 12;
 
+        if (!edges || !edges.length || !edges[0].length) {
+            return {
+                x0: 0,
+                y0: 0,
+                width: 0,
+                height: 0,
+                theta: 0,
+                HTscore: 0,
+                HT_vert: 0,
+                HT_horz: 0,
+                bool: false
+            };
+        }
+
         w = edges.length;
         h = edges[0].length;
         x0 = (w - 1) / 2;
