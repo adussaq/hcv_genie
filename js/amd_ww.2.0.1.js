@@ -11,28 +11,30 @@ var amd_ww = (function () {
     lib = {};
 
     lib.startWorkers = function (start_obj) {
-        /*////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////
+        /*
         This function starts workers to have jobs passed to them. It is prudent to call
             <lib>.clearWorkers in the callback of the onComplete function to clear workers
             however when this is called it clears all existing workers.
-        ARGV: start_obj has three options: 
+        ARGV: start_obj has three options:
             filename -  (string) all workers need a file to be run, pass that in here,
                 this is the only required options
-            num_workers - (number) the number of workers to start, I would recommend 
+            num_workers - (number) the number of workers to start, I would recommend
                 no more than 2-4 workers at a time. (Default 4)
             callback - (function) called once workers are started. (Should pause program
                 execution until they are called anyways, however if you are worried use
                 this parameter.)
             onError - (function) called if a web worker reports an error, default
                 is to call reportError()
-        
+
         !! The return of this object is the object for submitting jobs/clearing jobs.
 
         TODO: fix these comments to make more sense, add information about what returned
             object can do, pass the returned object into callback as well as returning it,
             possibly give the returned object a start workers function so it can clear
             and restart all of its workers.
-        */////////////////////////////////////////////////////////////////////////////////
+        */
+        ////////////////////////////////////////////////////////////////////////////////
 
         //Run the actual program
         return run(startWorkers)(start_obj);
@@ -40,7 +42,7 @@ var amd_ww = (function () {
 
     reportError = function (err) {
         return console.error("Worker error: " + err + "\nTo display more information for any" +
-            " function type <func_name> instead of <func_name>()");
+                " function type <func_name> instead of <func_name>()");
     };
 
     run = function (func) {
@@ -64,14 +66,18 @@ var amd_ww = (function () {
         if (!start_obj) {
             throw 'Must define start_obj with at least the workers file.';
         }
-        callback = start_obj.callback !== undefined ?  start_obj.callback : function () {
-            return;
-        };
+        callback = start_obj.callback !== undefined
+            ? start_obj.callback
+            : function () {
+                return;
+            };
         errorFunc = start_obj.onError || reportError;
         reportError = errorFunc;
-        numJobs = start_obj.num_workers !== undefined ? start_obj.num_workers : 4;
+        numJobs = start_obj.num_workers !== undefined
+            ? start_obj.num_workers
+            : 4;
         numJobs *= 1;
-            //Coerces into a number drops decimals if .000... 
+            //Coerces into a number drops decimals if .000...
         filename = start_obj.filename;
 
         //Make sure workers are available
@@ -99,8 +105,8 @@ var amd_ww = (function () {
     createWorkerObj = function (start_obj) {
         //Declare local vars
         var jobsArray, sublib, paused, all,
-            startJob, submitJob, workersArr, nextJob, createWorkPromise,
-            promiseArray, pausedPromise, promiseFunction;
+                startJob, submitJob, workersArr, nextJob, createWorkPromise,
+                promiseArray, pausedPromise, promiseFunction;
 
         //Define local vars
         jobsArray = [];
@@ -139,13 +145,18 @@ var amd_ww = (function () {
             });
         };
 
+        sublib.clear_jobs = function () {
+            promiseArray = [];
+        };
+
         sublib.submit = function (job) {
-            /*////////////////////////////////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////////////////////////////////
+            /*
             This function adds a job to the queue of jobs to accomplish
             ARGV: job - (object, required) This will be submitted to the worker file, the file must then
                     know how to handle the submission.
-                callback - (function) function to be preformed once the submitted job is 
-                     finished, take the return parameter from a web worker which is an object 
+                callback - (function) function to be preformed once the submitted job is
+                     finished, take the return parameter from a web worker which is an object
                     of this structure:
                         {"ports":<array>,
                         "cancelBubble":<bool>,
@@ -163,7 +174,8 @@ var amd_ww = (function () {
                         "origin":<string>,
                         "returnValue":<bool>,
                         "srcElement":<object>}
-            */////////////////////////////////////////////////////////////////////////////////
+            */
+            ////////////////////////////////////////////////////////////////////////////////
 
             //Run the actual program
             return run(submitJob)(job);
@@ -217,15 +229,17 @@ var amd_ww = (function () {
 
         //Global redefine all and race to not need the array expicitly defined.
         sublib.all = function (array) {
-            /*////////////////////////////////////////////////////////////////////////////////
+            /*
+            ////////////////////////////////////////////////////////////////////////////////
             This function sets the function to be called once all processes are complete
-                it MUST be called after all jobs have been submitted and must be passed a 
-                callback function. It is prudent to call <lib>.clearWorkers in the callback 
+                it MUST be called after all jobs have been submitted and must be passed a
+                callback function. It is prudent to call <lib>.clearWorkers in the callback
                 of this function to clear workers, however when they are automatically cleared
                 if more are started.
             ARGV: callback - (function, required) function to execute once all submitted jobs have ran.
                     takes no parameters.
-            */////////////////////////////////////////////////////////////////////////////////
+            */
+            ////////////////////////////////////////////////////////////////////////////////
 
             //Run the actual program
             return run(all)(array);
@@ -236,7 +250,10 @@ var amd_ww = (function () {
             if (array && array.length > 0) {
                 promRet = Promise.all(array);
             } else {
-                promRet = Promise.all(promiseArray);
+                promRet = Promise.all(promiseArray).then(function (x) {
+                    promiseArray = [];
+                    return x;
+                });
             }
             return promRet;
         };
@@ -247,7 +264,10 @@ var amd_ww = (function () {
             if (array && array.length > 0) {
                 promRet = Promise.all(array);
             } else {
-                promRet = Promise.all(promiseArray);
+                promRet = Promise.all(promiseArray).then(function (x) {
+                    promiseArray = [];
+                    return x;
+                });
             }
             return promRet;
         };
@@ -302,7 +322,7 @@ var amd_ww = (function () {
             //Add the job to the list of promises
             promiseArray.push(jobP.catch(function (err) {
                 console.error(err);
-                return undefined; //This insures that promiseArray.all 
+                return undefined; //This insures that promiseArray.all
                         // works, and just returns undefined for failed,
                         // but completed work.
             }));
@@ -375,9 +395,11 @@ var amd_ww = (function () {
             var filename, numJobs, i;
             //callback = start_obj.callback || function () {};
 
-            numJobs = start_obj.num_workers !== undefined ? start_obj.num_workers : 4;
+            numJobs = start_obj.num_workers !== undefined
+                ? start_obj.num_workers
+                : 4;
             numJobs *= 1;
-                //Coerces into a number drops decimals if .000... 
+                //Coerces into a number drops decimals if .000...
             filename = start_obj.filename;
 
             //Actually start the workers

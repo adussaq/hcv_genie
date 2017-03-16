@@ -184,38 +184,36 @@ var LINEARFIT = (function () {
         list.shift(); //gets rid of set of all.
 
         currentLen = list[0].length;
-        console.log(list);
         for (i = 0; i < list.length; i += 1) {
             currentLen = list[i].length;
             // if (currentLen === list[i].length) {
-                newX = [];
-                for (j = 0; j < X.length; j += 1) {
-                    newX[j] = [];
-                    for (k = 0; k < currentLen; k += 1) {
-                        newX[j].push(X[j][list[i][k]]);
-                    }
+            newX = [];
+            for (j = 0; j < X.length; j += 1) {
+                newX[j] = [];
+                for (k = 0; k < currentLen; k += 1) {
+                    newX[j].push(X[j][list[i][k]]);
                 }
-                sol = main(newX, y, false);
-                if (sol) {
-                    last = -1;
-                    //Add in 0's
-                    for (k = 0; k < currentLen; k += 1) {
-                        while (list[i][k] !== last + 1) {
-                            console.log('weird...', list[i][k], last, list[i]);
-                            sol.params.splice(last + 1, 0, 0);
-                            last += 1;
-                        }
+            }
+            sol = main(newX, y, false);
+            if (sol) {
+                last = -1;
+                //Add in 0's
+                for (k = 0; k < currentLen; k += 1) {
+                    while (list[i][k] !== last + 1) {
+                        sol.params.splice(last + 1, 0, 0);
                         last += 1;
                     }
-                    for (k = last + 1; k < X[0].length - 1; k += 1) {
-                        sol.params.splice(k, 0, 0);
-                    }
+                    last += 1;
                 }
-                ans.push(sol);
+                for (k = last + 1; k < X[0].length - 1; k += 1) {
+                    sol.params.splice(k, 0, 0);
+                }
+            }
+            ans.push(sol);
             // }
         }
 
-        console.log(ans);
+        // console.log(ans);
         max = {ret: false, val: 0};
         for (i = 0; i < ans.length; i += 1) {
             if (ans[i] && ans[i].R2 > max.val) {
@@ -244,11 +242,12 @@ var LINEARFIT = (function () {
         ainv = matrix_invert(a);
 
         //check to make sure inversion worked
-        if (!matrix_check(matrix_mult(ainv, a)) || !matrix_check(matrix_mult(a, ainv))) {
+        if (tryAll || !ainv || !matrix_check(matrix_mult(ainv, a)) || !matrix_check(matrix_mult(a, ainv))) {
             if (tryAll) {
                 solution = recurse(X, y_orgin);
             } else {
                 solution = false;
+                console.log(solution, X.length, X[0].length);
             }
         } else {
             b = matrix_mult(ainv, matrix_transpose(X));
@@ -269,8 +268,8 @@ var LINEARFIT = (function () {
             });
             R2 = 1 - error / std_y;
             solution = {params: parameters, R2: R2, adj_R2: 1 - ((1 - R2) * (X.length - 1) / (X.length - X[0].length - 2))};
+            console.log(solution, X.length, X[0].length);
         }
-        console.log(solution, X.length, X[0].length);
         return solution;
     };
 

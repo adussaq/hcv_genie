@@ -104,6 +104,9 @@ var glob, global2 = [];
         //Display original canvas:
         var bandingObj;
         console.log(hcvG_results);
+        //empty the old result
+        proccessedImg.empty();
+        //Now put in the new one
         scaleCanvas({
             canvas: $(hcvG_results.canvas),
             all: true
@@ -153,6 +156,8 @@ var glob, global2 = [];
 
         table = $('<table class="table table-hover" style="width:100%">');
         textAnswer.empty();
+        resultsTable = [];
+
         textAnswer.append('<p>*<em>To change band calls begin by interacting with the image. Any changes to the table below will only be indicated in the report. Any changes done to the image will overwrite changes performed on the table in favor of the image state.</em></p>');
         table.appendTo(textAnswer);
         table.append($('<tr><th style="width:10%">Lane</th>' +
@@ -237,6 +242,8 @@ var glob, global2 = [];
         //headers: tg-5xks
         //rows: tg-ump5
         //make header
+
+        console.log(resultsTable);
         tableRow = $('<tr>').appendTo(fakeTable);
         tableRow.append($('<th>', {
             class: "tg-5xks",
@@ -388,7 +395,7 @@ var glob, global2 = [];
         if (obj.all) {
             resize = function () {
                 //Resets for a new image coming in...
-                proccessedImg.empty();
+                // proccessedImg.empty();
                 proccessedImg.css("overflow", "");
                 proccessedImg.css("height", "");
                 proccessedImg.append(

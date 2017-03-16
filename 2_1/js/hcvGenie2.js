@@ -43,9 +43,9 @@ hcvGenie.findBands = (function () {
             // distances as an additional, less variant, more highly weighted
             // solution.
             //Derived from training sets
-            distance_constant_band_rat = 0.005773889362428772,
+            distance_constant_band_rat = 0.013084054,
             distance_height_band_rat = 0,
-            distance_width_band_rat = 1.5652783476396177,
+            distance_width_band_rat = 1.611515655,
 
             // distance_constant_band_rat = 0.0485802080124064,
             // distance_height_band_rat = -26.623046832386127,
@@ -58,10 +58,10 @@ hcvGenie.findBands = (function () {
             // distance2_sixScore_band_rat = 0.13044095127234,
 
             // For test that was just done
-            distance2_constant_band_rat = 0.0265064097695837,
-            distance2_height_band_rat = 0,
+            distance2_constant_band_rat = 0.019446613,
+            distance2_height_band_rat = 0.143066321,
             distance2_width_band_rat = 0,
-            distance2_sixScore_band_rat = 0.9897735019794139,
+            distance2_sixScore_band_rat = 0.725718103,
 
             //Test 2...
             // distance2_constant_band_rat = 0.0265064097696132,
@@ -70,17 +70,18 @@ hcvGenie.findBands = (function () {
             // distance2_sixScore_band_rat = 0,
 
             checks_const_object = {
-        avg: 2.8795158538824004,
-        median: 0.011465488139782721,
-        horz: 0.0027601785393395564,
-        vert: -0.011174831222523073,
-        avg_horz: 0.006146825051097136,
-        avg_vert: 0.025563970881724886,
+        avg: 2.15983345,
+        median: 0.27995477,
+        horz: -0.000697195,
+        vert: -8.13753E-05,
+        avg_horz: 0.01293621,
+        avg_vert: 0.041964697,
         med_horz: 0,
         med_vert: 0,
-        constant: -0.08419412446744079,
+        constant: -0.476414777,
         // minimum: 0.2165
-        minimum: 0.1800
+        // minimum: 0.1800
+        minimum: 0.182148599
     },
 
     //Global Objects
@@ -432,7 +433,7 @@ hcvGenie.findBands = (function () {
                     theta: 0,
                     width: htEdges.array.length
                 };
-                console.log(htEdges.array.length, htEdges.array[0].length);
+                // console.log(htEdges.array.length, htEdges.array[0].length);
                 outlineRectangle(testRegionParams, '#FFFFCC', myCanvas);
                 houghTransformWorker.submit({
                     array: htEdges.array,
@@ -891,7 +892,7 @@ hcvGenie.findBands = (function () {
                     //Actually delete the objects
                     delete allLanes[i].bands[j];
                     delete callArr[i][j];
-                    console.log(band);
+                    // console.log(band);
 
                     for (ii = 0; ii < callArr[i].length; ii += 1) {
                         if (callArr[i][ii]) {
@@ -1067,7 +1068,7 @@ hcvGenie.findBands = (function () {
 
                 sixScore = reCalcSixScore();
 
-                console.log('starting band stuff...');
+                // console.log('starting band stuff...');
 
                 for (i = 0; i < lanes.length; i += 1) {
                     lanes[i].bands = lanes[i].bands.sort(sortBands);
@@ -1490,8 +1491,8 @@ hcvGenie.findBands = (function () {
         drawingCanvas.css('top', "0px");
         drawingCanvas.css('width', "100%");
         context2 = drawingCanvas[0].getContext('2d');
-        console.log(div);
-        console.log(drawingCanvas);
+        // console.log(div);
+        // console.log(drawingCanvas);
 
 
         calculateGausWindow = function (colorArr) {
@@ -1745,7 +1746,7 @@ hcvGenie.findBands = (function () {
         };
 
         retObj.canvasHolder = div;
-        console.log(retObj);
+        // console.log(retObj);
 
         return retObj;
     };
@@ -1841,14 +1842,6 @@ hcvGenie.findBands = (function () {
                     }).then(function (edges) {
                         return houghTransformWorker.submit(edges);
                     }).then(function (rect) {
-                        console.log(
-                            rect.x0,
-                            rect.y0,
-                            Math.floor(x - ww * 2 / 2) - 1,
-                            Math.floor(y - hh * 1.75 / 2) - 1,
-                            x,
-                            y
-                        );
                         rect.x0 = Math.floor(x - ww * 2 / 2) + rect.x0;
                         rect.y0 = Math.floor(y - hh * 1.75 / 2) + rect.y0;
                         rect.width = ww;
@@ -1924,7 +1917,7 @@ hcvGenie.findBands = (function () {
 
         popup_band = function (hit) {
 
-            console.log(hit);
+            // console.log(hit);
             $modal.title('Band');
             $modal.body(
                 '<p>Lane: ' + (hit[0].lane_number + 1) + '</p>' +
@@ -1951,19 +1944,19 @@ hcvGenie.findBands = (function () {
                 var p = hit[1].change_call(evt.currentTarget.value * 1);
                 $('#band_call_modal').text(evt.currentTarget.value);
                 p.then(function (x) {
-                    console.log(x);
+                    // console.log(x);
                     $('#genotype_call_modal').text(x);
                 });
             });
 
             $modal.footer().unbind("click").html("Remove Band").click(function () {
-                console.log(hit);
+                // console.log(hit);
                 var p = hit[1].remove();
                 $modal.modal('toggle');
                 //remove so it will not come up when clicked any longer.
                 delete rectangles[Math.round(hit[0].x0)][Math.round(hit[0].y0)];
                 p.then(function (x) {
-                    console.log(x);
+                    // console.log(x);
                     $('#genotype_call_modal').text(x);
                 });
             });
@@ -2103,7 +2096,6 @@ hcvGenie.findBands = (function () {
         //Driver function
         respondToClick = function (canvasElement, canvasObj) {
             return function (evt) {
-                console.log(evt.currentTarget)
                 var pos, hit;
                 evt.preventDefault();
                 if (!responding) {
@@ -2130,7 +2122,7 @@ hcvGenie.findBands = (function () {
 
                     //If there is no hit, then do not respond
 
-                    console.log(hit);
+                    // console.log(hit);
 
                     setTimeout(function () {
                         responding = false;
@@ -2150,7 +2142,7 @@ hcvGenie.findBands = (function () {
 
         //Convert the canvas into an object with a number of functions attached
         myCanvasObject = makeCanvasObject(canvasElement);
-        console.log(canvasElement);
+        // console.log(canvasElement);
 
         //Add in the click response stuff
         $(canvasElement).parent().click(respondToClick(canvasElement, myCanvasObject));
@@ -2181,11 +2173,17 @@ hcvGenie.findBands = (function () {
     };
 
     main = function (input_obj) {
+        //This should clear the jobs buffer...
+        colorDistanceWorker.clear_jobs();
+        houghTransformWorker.clear_jobs();
+        vertHoughTransformWorker.clear_jobs();
+        edgeDetectionWorker.clear_jobs();
+
         if (input_obj.onchange && typeof input_obj.onchange === 'function') {
             onchange = input_obj.onchange;
         } else {
             onchange = function () {
-                console.log(input_obj, 'called blank change function');
+                // console.log(input_obj, 'called blank change function');
                 return;
             };
         }

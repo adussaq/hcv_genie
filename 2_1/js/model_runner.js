@@ -3,10 +3,10 @@ var globModel = [];
 (function () {
     'use strict';
 
-    var $ = jQuery, startAnalysis, getFile, displayResults, scaleCanvas, proccessedImg, startFitting;
+    var $ = jQuery, startAnalysis, getFile, displayResults, scaleCanvas, proccessedImg, startFitting, dropRegion, fromComputerButton, sampleButtonClicked = false;
 
     getFile = function (file) {
-        console.log(file);
+        // console.log(file);
         if (window.File && window.FileReader && window.FileList && window.Blob) {
             //this function is called when the input loads an image
             var url, reader = new FileReader();
@@ -23,6 +23,9 @@ var globModel = [];
     };
 
     startAnalysis = function (file, url, scale) {
+        console.log('starting scale:' + scale);
+        proccessedImg.empty();
+        proccessedImg.height("");
         if (file.name.match(/\.pdf$/)) {
             hcvGenie.findBands({
                 image: {
@@ -43,29 +46,32 @@ var globModel = [];
     };
 
     startFitting = function (data, file, url, scale) {
-        console.log('start fitting', data);
+        // console.log('start fitting', data);
 
         globModel.push(data);
 
         if (scale < 3) {
-            startAnalysis(file, url, scale + 0.1);
+            startAnalysis(file, url, scale + 0.33);
             proccessedImg.empty();
             proccessedImg.height("");
             $('#model').empty();
+        } else {
+            sampleButtonClicked = false;
+            fromComputerButton.toggleClass('disabled');
+            dropRegion.show();
         }
 
         //Now we need to fit these two models
-        return [data, file, url, scale];
     };
 
     displayResults = function (file, url, scale) {
         return function (hcvG_results) {
             hcvG_results.bandingPromise.then(function (banding_obj) {
-                console.log('bands', banding_obj);
+                // console.log('bands', banding_obj);
 
                 //clear part of the page
                 banding_obj.lanePromise.then(function (thisObj) {
-                    console.log('all banded...', thisObj);
+                    // console.log('all banded...', thisObj);
                     scaleCanvas({
                         canvas: $(hcvG_results.canvasObject.canvasHolder),
                         all: false,
@@ -81,7 +87,8 @@ var globModel = [];
                     class: 'btn btn-lg btn-primary text-center center-block bottom-buffer'
                 }).click(function (evt) {
                     evt.preventDefault();
-                    console.log(hcvG_results.bandingPromise);
+                    // console.log(hcvG_results.bandingPromise);
+                    $('#model').empty();
                     banding_obj.model_fit_data().then(function (dataObj) {
                         startFitting(dataObj, file, url, scale);
                     });
@@ -95,7 +102,7 @@ var globModel = [];
 
     scaleCanvas = function (obj) {
         var resize;
-        console.log('resizing?', obj);
+        // console.log('resizing?', obj);
         if (obj.all) {
             resize = function () {
                 //Resets for a new image coming in...
@@ -105,7 +112,7 @@ var globModel = [];
                 proccessedImg.append(
                     obj.canvas.width(proccessedImg.width())
                 );
-                console.log('resizing all');
+                // console.log('resizing all');
             };
         } else {
             resize = function () {
@@ -131,7 +138,7 @@ var globModel = [];
                 );
                 obj.canvas.css("margin-top", top);
                 obj.canvas.css("margin-left", -imgBuff * widthRat);
-                console.log('resizing part', width, imgWidth);
+                // console.log('resizing part', width, imgWidth);
             };
         }
         resize();
@@ -141,8 +148,7 @@ var globModel = [];
 
     //set up buttons
     (function () {
-        var hover = false, checkDrag, fromComputer, dropRegion,
-                fromComputerButton, sampleButtonClicked = false;
+        var hover = false, checkDrag, fromComputer;
 
         fromComputer = $('.computerFile');
         fromComputerButton = $('.computerFileButton');
