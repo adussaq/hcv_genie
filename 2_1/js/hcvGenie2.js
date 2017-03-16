@@ -43,9 +43,9 @@ hcvGenie.findBands = (function () {
             // distances as an additional, less variant, more highly weighted
             // solution.
             //Derived from training sets
-            distance_constant_band_rat = 0.013084054,
-            distance_height_band_rat = 0,
-            distance_width_band_rat = 1.611515655,
+            distance_height_band_rat = 0.536585308,
+            distance_width_band_rat = 0,
+            distance_constant_band_rat = 0.004070866,
 
             // distance_constant_band_rat = 0.0485802080124064,
             // distance_height_band_rat = -26.623046832386127,
@@ -58,10 +58,10 @@ hcvGenie.findBands = (function () {
             // distance2_sixScore_band_rat = 0.13044095127234,
 
             // For test that was just done
-            distance2_constant_band_rat = 0.019446613,
-            distance2_height_band_rat = 0.143066321,
-            distance2_width_band_rat = 0,
-            distance2_sixScore_band_rat = 0.725718103,
+            distance2_height_band_rat = 0,
+            distance2_width_band_rat = -0.359621048,
+            distance2_sixScore_band_rat = 1.214690674,
+            distance2_constant_band_rat = 0.008761822,
 
             //Test 2...
             // distance2_constant_band_rat = 0.0265064097696132,
@@ -70,18 +70,16 @@ hcvGenie.findBands = (function () {
             // distance2_sixScore_band_rat = 0,
 
             checks_const_object = {
-        avg: 2.15983345,
-        median: 0.27995477,
-        horz: -0.000697195,
-        vert: -8.13753E-05,
-        avg_horz: 0.01293621,
-        avg_vert: 0.041964697,
+        avg: 1.944205217,
+        median: 0.28472622,
+        horz: -0.000904595,
+        vert: -0.000142939,
+        avg_horz: 0.013712932,
+        avg_vert: 0.003688149,
         med_horz: 0,
         med_vert: 0,
-        constant: -0.476414777,
-        // minimum: 0.2165
-        // minimum: 0.1800
-        minimum: 0.182148599
+        constant: -0.15930532,
+        minimum: 0.172387014
     },
 
     //Global Objects
@@ -1855,12 +1853,14 @@ hcvGenie.findBands = (function () {
         };
 
         checkPosition = function (pos) {
-            var x, y, i, found = [], j, x0, y0, dist, minDist = Infinity, ret;
+            var x, y, i, found = [], j, x0, y0, dist, minDist = Infinity, ret, rWid, rHig;
             x0 = Math.round(pos.x);
             y0 = Math.round(pos.y);
+            rWid = width / rectCount;
+            rHig = height / rectCount;
 
-            for (x = Math.floor(x0 - width / rectCount / 2); Math.ceil(x < x0 + width / rectCount / 2 + 1); x += 1) {
-                for (y = Math.floor(y0 - height / rectCount / 1.5); y < Math.ceil(y0 + height / rectCount / 1.5 + 1); y += 1) {
+            for (x = Math.floor(x0 - rWid); Math.ceil(x < x0 + rWid + 1); x += 1) {
+                for (y = Math.floor(y0 - 2 * rHig); y < Math.ceil(y0 + 2 * rHig + 1); y += 1) {
                     if (rectangles[x] && rectangles[x][y]) {
                         found.push(rectangles[x][y]);
                     } else if (walked[x] && walked[x][y]) {
