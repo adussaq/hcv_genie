@@ -93,7 +93,7 @@ var glob, global2 = [];
             if (banding.match(/^[\s,\d]+$/)) {
                 bandArr = banding.split(/,|\s|;/);
                 hcvGenie.genotype(bandArr).then(function (res) {
-                    console.log(res);
+                    // console.log(res);
                     $('#' + bandObj.genotype_id).text(res);
                 });
             }
@@ -103,7 +103,7 @@ var glob, global2 = [];
     displayResults = function (hcvG_results) {
         //Display original canvas:
         var bandingObj;
-        console.log(hcvG_results);
+        // console.log(hcvG_results);
         //empty the old result
         proccessedImg.empty();
         //Now put in the new one
@@ -128,7 +128,7 @@ var glob, global2 = [];
             bandingObj = temp;
             return bandingObj.lanePromise;
         }).then(function (results) {
-            console.log('here', results.lanes(), results.region, hcvG_results);
+            // console.log('here', results.lanes(), results.region, hcvG_results);
 
             //temporary until functions are linked together...
 
@@ -204,7 +204,7 @@ var glob, global2 = [];
                     oldCanvas.height() / oldCanvas.width()
         );
 
-        console.log('here to crop');
+        // console.log('here to crop');
 
         return Promise.resolve({
             imgURL: tempCanvas.toDataURL(),
@@ -243,7 +243,7 @@ var glob, global2 = [];
         //rows: tg-ump5
         //make header
 
-        console.log(resultsTable);
+        // console.log(resultsTable);
         tableRow = $('<tr>').appendTo(fakeTable);
         tableRow.append($('<th>', {
             class: "tg-5xks",
@@ -401,7 +401,7 @@ var glob, global2 = [];
                 proccessedImg.append(
                     obj.canvas.width(proccessedImg.width())
                 );
-                console.log('resizing all');
+                // console.log('resizing all');
             };
         } else {
             resize = function () {
@@ -427,7 +427,7 @@ var glob, global2 = [];
                 );
                 obj.canvas.css("margin-top", top);
                 obj.canvas.css("margin-left", -imgBuff * widthRat);
-                console.log('resizing part', width, imgWidth);
+                // console.log('resizing part', width, imgWidth);
             };
         }
         resize();

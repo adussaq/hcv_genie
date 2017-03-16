@@ -18,7 +18,7 @@ hcvGenie.findBands = (function () {
 
     //Functions
     var findBandLocations, findGreenRectangles, findGreenRegion,
-            pdf2canvas, processCanvas, makeCanvasObject,
+            pdf2canvas, processCanvas, makeCanvasObject, setUpClickFuncs,
             main, findPositiveNeighborRegion, outlineRectangle,
             numericalSort, calculateMedian, medianGrey, round,
             callGenotype, respondToClick, iWalked, rectFound,
@@ -1785,7 +1785,7 @@ hcvGenie.findBands = (function () {
 
 
     //Set up the functions needed to respond to clicks
-    (function () {
+    setUpClickFuncs = function () {
         var getMousePos, walked = {}, rectangles = {}, checkPosition,
                 width = 0, height = 0, rectCount = 1e-50, //fix divide by 0
                 popup_band, popup_blank, $modal, createBlankPopup,
@@ -1799,6 +1799,15 @@ hcvGenie.findBands = (function () {
                 x: (evt.clientX - rect.left) * scaleX,   // scale mouse coordinates after they have
                 y: (evt.clientY - rect.top) * scaleY     // been adjusted to be relative to element
             };
+        };
+
+        setUpClickFuncs = function () {
+            walked = {};
+            rectangles = {};
+            width = 0;
+            height = 0;
+            rectCount = 1e-50;
+            responding = false;
         };
 
         //Stuff to record where things are found
@@ -2010,7 +2019,7 @@ hcvGenie.findBands = (function () {
                     return a + b;
                 }) + checks_const_object.constant;
 
-                $modal.body('<p>This proposed rectangle has a grey score of: ' +
+                $modal.body('<p>This proposed rectangle for lane ' + (hit[0].lane_number + 1) + ' has a grey score of: ' +
                         checks.toFixed(3) + '. This can be compared to the current minimum: ' +
                         checks_const_object.minimum + '.</p>');
 
@@ -2132,7 +2141,7 @@ hcvGenie.findBands = (function () {
                 }
             };
         };
-    }());
+    };
 
 
     //Truely the main function, this returns to the calling function
@@ -2178,6 +2187,9 @@ hcvGenie.findBands = (function () {
         houghTransformWorker.clear_jobs();
         vertHoughTransformWorker.clear_jobs();
         edgeDetectionWorker.clear_jobs();
+
+        //reset click funcs
+        setUpClickFuncs();
 
         if (input_obj.onchange && typeof input_obj.onchange === 'function') {
             onchange = input_obj.onchange;
