@@ -43,9 +43,9 @@ hcvGenie.findBands = (function () {
             // distances as an additional, less variant, more highly weighted
             // solution.
             //Derived from training sets
-            distance_height_band_rat = 0.536585308,
+            distance_height_band_rat = 0.535608495,
             distance_width_band_rat = 0,
-            distance_constant_band_rat = 0.004070866,
+            distance_constant_band_rat = 0.000742077,
 
             // distance_constant_band_rat = 0.0485802080124064,
             // distance_height_band_rat = -26.623046832386127,
@@ -59,9 +59,9 @@ hcvGenie.findBands = (function () {
 
             // For test that was just done
             distance2_height_band_rat = 0,
-            distance2_width_band_rat = -0.359621048,
-            distance2_sixScore_band_rat = 1.214690674,
-            distance2_constant_band_rat = 0.008761822,
+            distance2_width_band_rat = -0.304306184,
+            distance2_sixScore_band_rat = 1.183531192,
+            distance2_constant_band_rat = 0.00448763,
 
             //Test 2...
             // distance2_constant_band_rat = 0.0265064097696132,
@@ -70,16 +70,16 @@ hcvGenie.findBands = (function () {
             // distance2_sixScore_band_rat = 0,
 
             checks_const_object = {
-        avg: 1.944205217,
-        median: 0.28472622,
-        horz: -0.000904595,
-        vert: -0.000142939,
-        avg_horz: 0.013712932,
-        avg_vert: 0.003688149,
+        avg: 1.805357641,
+        median: 0.30328079,
+        horz: -0.001111204,
+        vert: -3.22129E-05,
+        avg_horz: 0.015833984,
+        avg_vert: -0.00596518,
         med_horz: 0,
         med_vert: 0,
-        constant: -0.15930532,
-        minimum: 0.172387014
+        constant: -0.090801333,
+        minimum: 0.206066754
     },
 
     //Global Objects
@@ -230,31 +230,35 @@ hcvGenie.findBands = (function () {
                 array: htEdges.array,
                 roundDigit: roundDigit
             }).then(function (rectangle) {
-                rectangle.HTscore = round(rectangle.HTscore /
-                        minimum_grey_edge / 50); // Note 50 > 10 used in
-                                                        // true rectangle
-                rectangle.bool = false;
-                rectangle.x0 += params.x_shift + htEdges.x_shift;
-                rectangle.y0 += params.y_shift + htEdges.y_shift;
-                // outlineRectangle(JSON.parse(JSON.stringify(rectangle)), '#800080', myCanvas);
-                rectangle.width = params.rect_width;
-                rectangle.height = params.rect_height;
-                // outlineRectangle(rectangle, '#FFA500', myCanvas);
+                if (rectangle.bool) {
+                    rectangle.HTscore = round(rectangle.HTscore /
+                            minimum_grey_edge / 50); // Note 50 > 10 used in
+                                                            // true rectangle
+                    rectangle.bool = false;
+                    rectangle.x0 += params.x_shift + htEdges.x_shift;
+                    rectangle.y0 += params.y_shift + htEdges.y_shift;
+                    // outlineRectangle(JSON.parse(JSON.stringify(rectangle)), '#800080', myCanvas);
+                    rectangle.width = params.rect_width;
+                    rectangle.height = params.rect_height;
+                    // outlineRectangle(rectangle, '#FFA500', myCanvas);
 
-                params.distances.push({
-                    distance2: round(Math.sqrt(Math.pow(rectangle.x0
-                            - params.x_origin, 2) +
-                            Math.pow(rectangle.y0 -
-                            params.y_origin, 2))),
-                    //Note that models for the below improved on the
-                    // above slightly.
-                    distance: round(Math.abs(rectangle.y0 -
-                            params.y_origin) * Math.sqrt(params.m *
-                            params.m + 1)),
-                    rectangle: rectangle
-                });
-                params = getmxb(params, rectangle);
-                next(edge.y + 1);
+                    params.distances.push({
+                        distance2: round(Math.sqrt(Math.pow(rectangle.x0
+                                - params.x_origin, 2) +
+                                Math.pow(rectangle.y0 -
+                                params.y_origin, 2))),
+                        //Note that models for the below improved on the
+                        // above slightly.
+                        distance: round(Math.abs(rectangle.y0 -
+                                params.y_origin) * Math.sqrt(params.m *
+                                params.m + 1)),
+                        rectangle: rectangle
+                    });
+                    params = getmxb(params, rectangle);
+                    next(edge.y + 1);
+                } else {
+                    next(edge.y + 1);
+                }
             }).catch(function (error) {
                 console.error(error);
             });
@@ -592,18 +596,18 @@ hcvGenie.findBands = (function () {
                             edges[xPos + xRange][yPos].direction === 0 &&
                             edges[xPos + xRange][yPos].strength > 0
                         ) {
+                            edgeFound = true;
                             blankCheck = 0.95 * (params.distances.length + 1);
                             performHoughTransform({x: xPos, y: yPos,
                                     end: false}, edges, params, walkFunction);
-                            edgeFound = true;
                         }
                     }
 
                     if (count > blankCheck * params.rect_width) {
+                        edgeFound = true;
                         vertHoughTrans({x: xPos, y: yPos,
                                 end: false}, edges, params, walkFunction);
                         blankCheck = 1.5 + 0.95 * (params.distances.length);
-                        edgeFound = true;
                     }
                     yPos += 1;
                     count += 1;
@@ -636,7 +640,7 @@ hcvGenie.findBands = (function () {
             return function (edges) {
                 var yPos, params;
                 yPos = 0;
-
+                console.log(edges.length, edges[0].length, laneNumber, rectangle);
                 params = {
                     lane_number: laneNumber,
                     x_shift: boarderParams.x_shift_left,

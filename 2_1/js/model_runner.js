@@ -12,7 +12,7 @@ var globModel = [];
             var url, reader = new FileReader();
             reader.onload = function (event) {
                 url = event.target.result;
-                startAnalysis(file, url, 2); //Start at 2.
+                startAnalysis(file, url, 2.1); //Start at 2.1
             };
 
             //when the file is read it triggers the onload event above.
@@ -47,11 +47,11 @@ var globModel = [];
 
     startFitting = function (data, file, url, scale) {
         // console.log('start fitting', data);
-
+        var inc = 0.45;
         globModel.push(data);
 
-        if (scale < 3) {
-            startAnalysis(file, url, scale + 0.33);
+        if (scale + inc < 3) {
+            startAnalysis(file, url, scale + inc);
             proccessedImg.empty();
             proccessedImg.height("");
             $('#model').empty();
