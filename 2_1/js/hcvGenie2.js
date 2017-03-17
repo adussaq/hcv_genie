@@ -553,7 +553,8 @@ hcvGenie.findBands = (function () {
                             });
                             rectangle.clear = undo;
                             //Just upped to 1.555 from 1.55 to try and skip a double call
-                            next(Math.floor(edge.y + params.rect_height * 1.555));
+                            next(Math.floor(rectangle.y0 - params.y_shift +
+                                params.rect_height));
                         } else {
                             failedRects.push([checks, greyScore.avg, greyScore.median, rectangle.HTscore]);
                             next(Math.floor(edge.y + 2));
@@ -603,7 +604,7 @@ hcvGenie.findBands = (function () {
                         }
                     }
 
-                    if (count > blankCheck * params.rect_width) {
+                    if (!edgeFound && count > blankCheck * params.rect_width) {
                         edgeFound = true;
                         vertHoughTrans({x: xPos, y: yPos,
                                 end: false}, edges, params, walkFunction);
