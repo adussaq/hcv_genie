@@ -2302,7 +2302,8 @@ hcvGenie.genotype = (function () {
             thisKey = (parseInt(binarySolution.join(''), 2)).toString(36);
 
             if (database.hasOwnProperty(thisKey)) {
-                final = database[thisKey].replace(/GNT/g, 'Genotype');
+                final = database[thisKey].replace(/\*/g, ', but the possibility of G 6 \(subtypes c-l\) cannot be excluded');
+                final = final.replace(/G/g, 'Genotype ');
             } else {
                 final = "Unknown Band Pattern";
             }

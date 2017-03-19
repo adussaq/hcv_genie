@@ -152,7 +152,7 @@ var glob, global2 = [];
     };
 
     createTable = function (lanes) {
-        var lane, table, band, row;// tempTabStr = [];
+        var lane, table, band, row, tempTabStr = [];
 
         table = $('<table class="table table-hover" style="width:100%">');
         textAnswer.empty();
@@ -172,12 +172,12 @@ var glob, global2 = [];
                         '<td>' +
                         band.string + '</td></th>'
             });
-            // tempTabStr.push((lane + 1) + '\t ' + band.string + '\t ' + lanes[lane].genotype);
+            tempTabStr.push((lane + 1) + '\t ' + band.string.replace(/[\S\s]+\"([\d,\s]+)\">?/, '$1') + '\t ' + lanes[lane].genotype);
             table.append(row);
             resultsTable.push(row);
             $('#' + band.form_id).keyup(updateGenotypeCall(band));
         }
-        // console.log(tempTabStr.join('\n'));
+        console.log(tempTabStr.join('\n'));
     };
 
     cropCanvas = function () {
