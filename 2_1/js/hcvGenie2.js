@@ -22,7 +22,7 @@ hcvGenie.findBands = (function () {
             main, findPositiveNeighborRegion, outlineRectangle,
             numericalSort, calculateMedian, medianGrey, round,
             callGenotype, respondToClick, iWalked, rectFound,
-            undoColoring, addBand, calcMedianGrey, onchange,
+            undoColoring, addBand, calcMedianGrey, onchange, paramsOK,
     //Constants
             roundDigit = 10000,
             // greenXYZ = [76.28056296, -35.52371953, 23.79405389],
@@ -43,9 +43,9 @@ hcvGenie.findBands = (function () {
             // distances as an additional, less variant, more highly weighted
             // solution.
             //Derived from training sets
-            distance_height_band_rat = 0.535608495,
-            distance_width_band_rat = 0,
-            distance_constant_band_rat = 0.000742077,
+            distance_height_band_rat = 0.128349036,
+            distance_width_band_rat = 1.227918574,
+            distance_constant_band_rat = 0.007977998,
 
             // distance_constant_band_rat = 0.0485802080124064,
             // distance_height_band_rat = -26.623046832386127,
@@ -58,10 +58,10 @@ hcvGenie.findBands = (function () {
             // distance2_sixScore_band_rat = 0.13044095127234,
 
             // For test that was just done
-            distance2_height_band_rat = 0,
-            distance2_width_band_rat = -0.304306184,
-            distance2_sixScore_band_rat = 1.183531192,
-            distance2_constant_band_rat = 0.00448763,
+            distance2_height_band_rat = 0.054515111,
+            distance2_width_band_rat = -0.011833862,
+            distance2_sixScore_band_rat = 0.899318637,
+            distance2_constant_band_rat = 0.010102984,
 
             //Test 2...
             // distance2_constant_band_rat = 0.0265064097696132,
@@ -70,16 +70,16 @@ hcvGenie.findBands = (function () {
             // distance2_sixScore_band_rat = 0,
 
             checks_const_object = {
-        avg: 1.805357641,
-        median: 0.30328079,
-        horz: -0.001111204,
-        vert: -3.22129E-05,
-        avg_horz: 0.015833984,
-        avg_vert: -0.00596518,
+        avg: 2.025167605,
+        median: 0.289732476,
+        horz: -0.000853717,
+        vert: -8.61936E-055,
+        avg_horz: 0.012196369,
+        avg_vert: 0.017936552,
         med_horz: 0,
         med_vert: 0,
-        constant: -0.090801333,
-        minimum: 0.206066754
+        constant: -0.271256043,
+        minimum: 0.171387546
     },
 
     //Global Objects
@@ -204,6 +204,18 @@ hcvGenie.findBands = (function () {
         return undoColoring(origin, myCanvas);
     };
 
+    paramsOK = function (rectangle) {
+        //Check a rectangle before it is adjusted
+        var ret = false;
+        if (rectangle.theta && rectangle.height && rectangle.width &&
+                rectangle.x0 && rectangle.y0 && Math.abs(rectangle.theta) +
+                Math.abs(rectangle.height) + Math.abs(rectangle.width) +
+                Math.abs(rectangle.x0) + Math.abs(rectangle.y0) < Infinity) {
+            ret = true;
+        }
+        return ret;
+    };
+
     findBandLocations = function (myCanvas, rectangles) {
         //Cycle through each main band location
         var im, rectangleCount, xBuffer, yBuffer = 2,
@@ -230,7 +242,7 @@ hcvGenie.findBands = (function () {
                 array: htEdges.array,
                 roundDigit: roundDigit
             }).then(function (rectangle) {
-                if (rectangle.bool) {
+                if (rectangle.bool && paramsOK(rectangle)) {
                     rectangle.HTscore = round(rectangle.HTscore /
                             minimum_grey_edge / 50); // Note 50 > 10 used in
                                                             // true rectangle
@@ -641,7 +653,7 @@ hcvGenie.findBands = (function () {
             return function (edges) {
                 var yPos, params;
                 yPos = 0;
-                console.log(edges.length, edges[0].length, laneNumber, rectangle);
+                // console.log(edges.length, edges[0].length, laneNumber, rectangle);
                 params = {
                     lane_number: laneNumber,
                     x_shift: boarderParams.x_shift_left,
@@ -1764,9 +1776,9 @@ hcvGenie.findBands = (function () {
                 var viewport, scale, renderContext;
 
                 //Set scale
-                scale = scaleSet || 2;
+                scale = scaleSet || 2.25;
 
-                scale = 2.2;
+                console.log('PDF Scale', scale);
 
                 //Get page image object
                 viewport = page.getViewport(scale);
@@ -2208,7 +2220,7 @@ hcvGenie.findBands = (function () {
             //if everything is good with then call resolve
             var canvas, context, imgPromise, scale;
 
-            scale = input_obj.image.scale || 2;
+            scale = input_obj.image.scale || 2.25;
 
             //Create invisible canvas object
             canvas = document.createElement('canvas');

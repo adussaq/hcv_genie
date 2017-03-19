@@ -119,7 +119,8 @@
             width: finalW,
             height: finalH,
             theta: finalTheta,
-            HTscore: peaks.vert.distPos[2] + peaks.vert.distNeg[2]
+            HTscore: peaks.vert.distPos[2] + peaks.vert.distNeg[2],
+            bool: true
         };
     };
 

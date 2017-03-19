@@ -181,7 +181,7 @@ var LINEARFIT = (function () {
             list.push(i);
         }
         list = power_set(list);
-        list.shift(); //gets rid of set of all.
+        // list.shift(); //gets rid of set of all.
 
         currentLen = list[0].length;
         for (i = 0; i < list.length; i += 1) {
