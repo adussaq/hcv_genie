@@ -43,9 +43,9 @@ hcvGenie.findBands = (function () {
             // distances as an additional, less variant, more highly weighted
             // solution.
             //Derived from training sets
-            distance_height_band_rat = 0.128349036,
-            distance_width_band_rat = 1.227918574,
-            distance_constant_band_rat = 0.007977998,
+            distance_height_band_rat = 0.067671093,
+            distance_width_band_rat = 1.434500504,
+            distance_constant_band_rat = 0.028140229,
 
             // distance_constant_band_rat = 0.0485802080124064,
             // distance_height_band_rat = -26.623046832386127,
@@ -58,10 +58,10 @@ hcvGenie.findBands = (function () {
             // distance2_sixScore_band_rat = 0.13044095127234,
 
             // For test that was just done
-            distance2_height_band_rat = 0.054515111,
-            distance2_width_band_rat = -0.011833862,
-            distance2_sixScore_band_rat = 0.899318637,
-            distance2_constant_band_rat = 0.010102984,
+            distance2_height_band_rat = 0.051083266,
+            distance2_width_band_rat = -0.033963283,
+            distance2_sixScore_band_rat = 0.919641343,
+            distance2_constant_band_rat = 0.012383146,
 
             //Test 2...
             // distance2_constant_band_rat = 0.0265064097696132,
@@ -70,16 +70,16 @@ hcvGenie.findBands = (function () {
             // distance2_sixScore_band_rat = 0,
 
             checks_const_object = {
-        avg: 2.025167605,
-        median: 0.289732476,
-        horz: -0.000853717,
-        vert: -8.61936E-055,
-        avg_horz: 0.012196369,
-        avg_vert: 0.017936552,
+        avg: 1.718024777,
+        median: 0.36978229,
+        horz: -0.001127936,
+        vert: -8.32934E-05,
+        avg_horz: 0.018544598,
+        avg_vert: 0.003377272,
         med_horz: 0,
         med_vert: 0,
-        constant: -0.271256043,
-        minimum: 0.171387546
+        constant: -0.172444006,
+        minimum: 0.2101562
     },
 
     //Global Objects
@@ -1113,7 +1113,7 @@ hcvGenie.findBands = (function () {
                         //push the last one
                         positives.push(band2.rectangle.greyScore.check2);
                         distanceCall.push([band2.call, band2.distance / lanesObj.rect_height, band2.distance / lanesObj.rect_width, band2.distance / sixScore]);
-                    } else {
+                    } else if (lanes[i].bands.length === 1) {
                         positives.push(lanes[i].bands[0].rectangle.greyScore.check2);
                         distanceCall.push([lanes[i].bands[0].call, lanes[i].bands[0].distance / lanesObj.rect_height, lanes[i].bands[0].distance / lanesObj.rect_width, lanes[i].bands[0].distance / sixScore]);
                     }
@@ -1902,8 +1902,8 @@ hcvGenie.findBands = (function () {
                 );
                 //heavily prioritize found rectangles...
                 if (found[i].length === 2) {
-                    dist -= (height / rectCount / 1.5);
-                    dist /= 2;
+                    dist -= Math.sqrt(Math.pow(height / rectCount / 2, 2) + Math.pow(width / rectCount / 2, 2));
+                    dist /= 2.5;
                 }
                 if (dist < minDist) {
                     j = i;
