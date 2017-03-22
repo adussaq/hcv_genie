@@ -42,6 +42,7 @@ hcvGenie.findBands = (function () {
             // distances for all the bands that are <= #6 and averages those
             // distances as an additional, less variant, more highly weighted
             // solution.
+<<<<<<< HEAD
 
             //Derived from training sets - final version...
             CONSTS = {"grey":{"avg":1.6610618397421548,"median":0.38757400854705043,"horz":-0.000991798099228899,"vert":-0.000058297930746602716,"avg_horz":0.018609796526077926,"avg_vert":0.007040155327921288,"med_horz":0,"med_vert":0,"constant":-0.2071098879225205,"minimum":0.20642615662898506},"distance":{"height":0.11794033910745608,"width":1.2547484108366547,"constant":0.01295329735651057},"distance2":{"height":0.0464379552605775,"width":-0.013883466855960229,"sixScore":0.9142819178400069,"constant":0.01260090260756326}},
@@ -58,6 +59,12 @@ hcvGenie.findBands = (function () {
             distance_height_band_rat = 0.128349036,
             distance_width_band_rat = 1.227918574,
             distance_constant_band_rat = 0.007977998,
+=======
+            //Derived from training sets
+            distance_height_band_rat = 0.067671093,
+            distance_width_band_rat = 1.434500504,
+            distance_constant_band_rat = 0.028140229,
+>>>>>>> parent of 58de210... add in the name and acc number stuff
 
             // distance_constant_band_rat = 0.0485802080124064,
             // distance_height_band_rat = -26.623046832386127,
@@ -70,10 +77,17 @@ hcvGenie.findBands = (function () {
             // distance2_sixScore_band_rat = 0.13044095127234,
 
             // For test that was just done
+<<<<<<< HEAD
             distance2_height_band_rat = 0.054515111,
             distance2_width_band_rat = -0.011833862,
             distance2_sixScore_band_rat = 0.899318637,
             distance2_constant_band_rat = 0.010102984,
+=======
+            distance2_height_band_rat = 0.051083266,
+            distance2_width_band_rat = -0.033963283,
+            distance2_sixScore_band_rat = 0.919641343,
+            distance2_constant_band_rat = 0.012383146,
+>>>>>>> parent of 58de210... add in the name and acc number stuff
 
             //Test 2...
             // distance2_constant_band_rat = 0.0265064097696132,
@@ -82,6 +96,7 @@ hcvGenie.findBands = (function () {
             // distance2_sixScore_band_rat = 0,
 
             checks_const_object = {
+<<<<<<< HEAD
         avg: 2.025167605,
         median: 0.289732476,
         horz: -0.000853717,
@@ -92,6 +107,18 @@ hcvGenie.findBands = (function () {
         med_vert: 0,
         constant: -0.271256043,
         minimum: 0.171387546
+=======
+        avg: 1.718024777,
+        median: 0.36978229,
+        horz: -0.001127936,
+        vert: -8.32934E-05,
+        avg_horz: 0.018544598,
+        avg_vert: 0.003377272,
+        med_horz: 0,
+        med_vert: 0,
+        constant: -0.172444006,
+        minimum: 0.2101562
+>>>>>>> parent of 58de210... add in the name and acc number stuff
     },
 
     //Global Objects
@@ -361,9 +388,9 @@ hcvGenie.findBands = (function () {
 
             //calculate hypotenuse based on width/height of rectangle and 26 max
             // lanes
-            roundedHypot = Math.ceil(100 * (27.5 - CONSTS.distance.constant) /
-                    (CONSTS.distance.width / width +
-                    CONSTS.distance.height / height)) / 100;
+            roundedHypot = Math.ceil(100 * (27.5 - distance_constant_band_rat) /
+                    (distance_width_band_rat / width +
+                    distance_height_band_rat / height)) / 100;
 
             //Determine the edge transformation boundries
             edgeY = Math.floor(height * 1.15 + y0); //To be sure that the height clears
@@ -543,12 +570,12 @@ hcvGenie.findBands = (function () {
 
                         //new...
                         checks = Object.keys(check2).map(function (key) {
-                            return check2[key] * CONSTS.grey[key];
+                            return check2[key] * checks_const_object[key];
                         }).reduce(function (a, b) {
                             return a + b;
-                        }) + CONSTS.grey.constant;
+                        }) + checks_const_object.constant;
 
-                        if (checks > CONSTS.grey.minimum && distanceFromGuess < rectangle.width) {
+                        if (checks > checks_const_object.minimum && distanceFromGuess < rectangle.width) {
                         // if (check2 < 5 && check2 > 4 && distanceFromGuess < rectangle.width) {
 
                             //We accept that this is a rectangle
@@ -578,7 +605,7 @@ hcvGenie.findBands = (function () {
                             rectangle.clear = undo;
                             //Just upped to 1.555 from 1.55 to try and skip a double call
                             next(Math.floor(rectangle.y0 - params.y_shift +
-                                    params.rect_height));
+                                params.rect_height));
                         } else {
                             failedRects.push([checks, greyScore.avg, greyScore.median, rectangle.HTscore]);
                             next(Math.floor(edge.y + 2));
@@ -782,7 +809,7 @@ hcvGenie.findBands = (function () {
                     Math.pow(allLanes[lane].indicatorBand.y0 - rectangle.y0, 2)
                 );
                 call = Math.round(distance *
-                        distance_cont + CONSTS.distance2.constant);
+                        distance_cont + distance2_constant_band_rat);
 
                 j = allLanes[lane].bands.length;
                 i = lane;
@@ -839,10 +866,10 @@ hcvGenie.findBands = (function () {
                     };
 
                     checks = Object.keys(check2).map(function (key) {
-                        return check2[key] * CONSTS.grey[key];
+                        return check2[key] * checks_const_object[key];
                     }).reduce(function (a, b) {
                         return a + b;
-                    }) + CONSTS.grey.constant;
+                    }) + checks_const_object.constant;
 
                     //We accept that this is a rectangle
                     rect.greyScore = greyScore;
@@ -946,20 +973,20 @@ hcvGenie.findBands = (function () {
 
             avgHeight /= hwCount;
             avgWidth /= hwCount;
-            distance_cont = (CONSTS.distance.width / avgWidth +
-                    CONSTS.distance.height / avgHeight);
+            distance_cont = (distance_width_band_rat / avgWidth +
+                    distance_height_band_rat / avgHeight);
 
             //Concept here is simple, the first 6 bands are more accurately
             // called than the remaining, so calculating an average distance
             // across the entire sheet gives us significantly more prediction
             // power.
             for (i = 0; i < allLanes.length; i += 1) {
-                sixLimit = (6.5 - CONSTS.distance.constant) / distance_cont;
+                sixLimit = (6.5 - distance_constant_band_rat) / distance_cont;
                 for (j = 0; j < allLanes[i].bands.length; j += 1) {
                     if (allLanes[i].bands[j].rectangle.bool &&
                             allLanes[i].bands[j].distance < sixLimit) {
                         call = Math.round(allLanes[i].bands[j].distance *
-                                distance_cont + CONSTS.distance.constant);
+                                distance_cont + distance_constant_band_rat);
                         sixScore += allLanes[i].bands[j].distance / call;
                         sixCount += 1;
                     } else if (!allLanes[i].bands[j].rectangle.bool) {
@@ -972,16 +999,16 @@ hcvGenie.findBands = (function () {
             sixScore /= sixCount;
 
             //Now I have a 'six score' I can calculate the band calls!
-            distance_cont = CONSTS.distance2.width / avgWidth +
-                    CONSTS.distance2.height / avgHeight +
-                    CONSTS.distance2.sixScore / sixScore;
+            distance_cont = distance2_width_band_rat / avgWidth +
+                    distance2_height_band_rat / avgHeight +
+                    distance2_sixScore_band_rat / sixScore;
 
             for (i = 0; i < allLanes.length; i += 1) {
                 callArr[i] = [];
                 writtenText[i] = [];
                 for (j = 0; j < allLanes[i].bands.length; j += 1) {
                     call = Math.round(allLanes[i].bands[j].distance *
-                            distance_cont + CONSTS.distance2.constant);
+                            distance_cont + distance2_constant_band_rat);
 
                     allLanes[i].bands[j].call = call;
                     allLanes[i].bands[j].change_call = changeCall(i, j);
@@ -2043,14 +2070,14 @@ hcvGenie.findBands = (function () {
                 };
 
                 checks = Object.keys(check2).map(function (key) {
-                    return check2[key] * CONSTS.grey[key];
+                    return check2[key] * checks_const_object[key];
                 }).reduce(function (a, b) {
                     return a + b;
-                }) + CONSTS.grey.constant;
+                }) + checks_const_object.constant;
 
                 $modal.body('<p>This proposed rectangle for lane ' + (hit[0].lane_number + 1) + ' has a grey score of: ' +
                         checks.toFixed(3) + '. This can be compared to the current minimum: ' +
-                        CONSTS.grey.minimum + '.</p>');
+                        checks_const_object.minimum + '.</p>');
 
                 $modal.footer().click(function (evt) {
                     evt.preventDefault();
