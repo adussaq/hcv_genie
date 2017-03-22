@@ -5,7 +5,7 @@ var glob, global2 = [];
         //functions
     var getAndRunSample, $ = jQuery, displayResults, getBandNumbers,
             updateGenotypeCall, getFile, convertTableToImage, scaleCanvas,
-            cropCanvas, makePDF, createTable,
+            cropCanvas, makePDF, createTable, tableBonus = [],
             //UI Elements
             textAnswer, /*originalImage,*/ proccessedImg, dropRegion,
             saveButton, sampleButton, fromComputerButton,
@@ -152,9 +152,22 @@ var glob, global2 = [];
     };
 
     createTable = function (lanes) {
-        var lane, table, band, row, tempTabStr = [];
+        var i, lane, table, band, row, tempTabStr = [], oldTable, children, tableValArr = [];
 
         table = $('<table class="table table-hover" style="width:100%">');
+        //get old table
+        oldTable = $(textAnswer.children()[1]).clone();
+        if (oldTable.text().length > 0) {
+            children = oldTable.children().children();
+            for (i = 1; i < children.length; i += 1) {
+                tableValArr[i - 1] = [
+                    $(children[i].children[1].children[1].children[0]).val(),
+                    $(children[i].children[2].children[1].children[0]).val()
+                ];
+            }
+        }
+
+        //delete old table
         textAnswer.empty();
         resultsTable = [];
 
@@ -163,14 +176,16 @@ var glob, global2 = [];
         table.append($('<tr><th style="width:10%">Lane</th>' +
                 '<th style="width:40%">Genotype</th>' +
                 '<th style="width:50%">Banding Pattern</th></tr>'));
+
         for (lane = 0; lane < lanes.length; lane += 1) {
             band = getBandNumbers(lanes[lane].bands);
+            tableValArr[lane] = tableValArr[lane] || ["", ""];
             row = $('<tr>', {
                 html: '<td>' + (lane + 1) + '</td>' +
                         '<td id="' + band.genotype_id + '"><p style="padding-bottom:14px;">' +
-                        lanes[lane].genotype + '</p><p>Patient Name: <input type="text" class="form-control" /></p></td>' +
+                        lanes[lane].genotype + '</p><p>Patient Name: <input type="text" class="form-control" value="' + tableValArr[lane][0] + '" /></p></td>' +
                         '<td><p>' +
-                        band.string + '</p><p>Accession Number: <input type="text" class="form-control" /></p></td></tr>'
+                        band.string + '</p><p>Accession Number: <input type="text" class="form-control" value="' + tableValArr[lane][1] + '" /></p></td></tr>'
             });
             tempTabStr.push((lane + 1) + '\t ' + band.string.replace(/[\S\s]+\"([\d,\s]+)\">?/, '$1') + '\t ' + lanes[lane].genotype);
             table.append(row);
