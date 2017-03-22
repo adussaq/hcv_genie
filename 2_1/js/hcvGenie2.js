@@ -54,6 +54,7 @@ hcvGenie.findBands = (function () {
 
             // Just the 150 dpi pg 11
             // CONSTS = {"grey":{"avg":0.8099347511460142,"median":0.5286403296044344,"horz":-0.0012911894535421527,"vert":0.00014158105398226842,"avg_horz":0.005579765541756885,"avg_vert":-0.03962859008811073,"med_horz":0,"med_vert":0,"constant":0.2754904850284524,"minimum":-0.05372411989239578},"distance":{"height":0.10946627817548815,"width":1.3947702656868408,"constant":-0.014114434728571528},"distance2":{"height":-0.005070797118440651,"width":0.5752014278041154,"sixScore":0.6846678935085125,"constant":-0.012740480027415518}},
+            //Derived from training sets
 
     //Global Objects
             colorDistanceWorker, houghTransformWorker, edgeDetectionWorker,
@@ -1086,7 +1087,7 @@ hcvGenie.findBands = (function () {
                         //push the last one
                         positives.push(band2.rectangle.greyScore.check2);
                         distanceCall.push([band2.call, band2.distance / lanesObj.rect_height, band2.distance / lanesObj.rect_width, band2.distance / sixScore]);
-                    } else if (lanes[i].bands.length === 1) {
+                    } else {
                         positives.push(lanes[i].bands[0].rectangle.greyScore.check2);
                         distanceCall.push([lanes[i].bands[0].call, lanes[i].bands[0].distance / lanesObj.rect_height, lanes[i].bands[0].distance / lanesObj.rect_width, lanes[i].bands[0].distance / sixScore]);
                     }
@@ -1875,8 +1876,8 @@ hcvGenie.findBands = (function () {
                 );
                 //heavily prioritize found rectangles...
                 if (found[i].length === 2) {
-                    dist -= Math.sqrt(Math.pow(height / rectCount / 2, 2) + Math.pow(width / rectCount / 2, 2));
-                    dist /= 2.5;
+                    dist -= (height / rectCount / 1.5);
+                    dist /= 2;
                 }
                 if (dist < minDist) {
                     j = i;

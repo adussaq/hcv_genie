@@ -58,7 +58,7 @@ var glob, global2 = [];
             image: {
                 type: 'pdf',
                 pageNumber: 1,
-                url: 'http://127.0.0.1:8000/dataExamples/pages/page' + page + '.pdf',
+                url: '../dataExamples/pages/page' + page + '.pdf',
                 scale: 2.25
             },
             onchange: createTable
@@ -71,7 +71,7 @@ var glob, global2 = [];
             formid = Math.random().toString(12).replace("0.", "");
             genoid = Math.random().toString(12).replace("0.", "");
             str = '<input id="' + formid +
-                    '" type="text" class="form-control" value="' +
+                    '" type="text" class="inputers form-control" value="' +
                     bandArr.map(function (x) {
                 return x.call;
             }).join(', ') + '">';
@@ -152,7 +152,7 @@ var glob, global2 = [];
     };
 
     createTable = function (lanes) {
-        var i, lane, table, band, row, tempTabStr = [], oldTable, children, tableValArr = [];
+        var i, lane, table, band, row, tempTabStr = [], oldTable, children, tableValArr = [], input1, input2;
 
         table = $('<table class="table table-hover" style="width:100%">');
         //get old table
@@ -177,16 +177,17 @@ var glob, global2 = [];
                 '<th style="width:40%">Genotype</th>' +
                 '<th style="width:50%">Banding Pattern</th></tr>'));
 
+        input1 = $()
+
         for (lane = 0; lane < lanes.length; lane += 1) {
             band = getBandNumbers(lanes[lane].bands);
-            tableValArr[lane] = tableValArr[lane] || ["", ""];
-            row = $('<tr>', {
-                html: '<td>' + (lane + 1) + '</td>' +
-                        '<td id="' + band.genotype_id + '"><p style="padding-bottom:14px;">' +
-                        lanes[lane].genotype + '</p><p>Patient Name: <input type="text" class="form-control" value="' + tableValArr[lane][0] + '" /></p></td>' +
-                        '<td><p>' +
-                        band.string + '</p><p>Accession Number: <input type="text" class="form-control" value="' + tableValArr[lane][1] + '" /></p></td></tr>'
-            });
+            tableValArr[lane] = tableValArr[lane] || [" ", " "];
+            row = $('<tr>' + '<td>' + (lane + 1) + '</td>' +
+                '<td id="' + band.genotype_id + '">' +
+                lanes[lane].genotype + '</td><td>Patient Name: <input name="name" class="inputers form-control" value="' + tableValArr[lane][0] + '" /></td>' +
+                '<tr><td></td><td>Banding Pattern:' +
+                band.string + '</td><td>Accession Number: <input name="Acc#" class="inputers form-control" value="' + tableValArr[lane][1] + '" /></td></tr>'
+            );
             tempTabStr.push((lane + 1) + '\t ' + band.string.replace(/[\S\s]+\"([\d,\s]+)\">?/, '$1') + '\t ' + lanes[lane].genotype);
             table.append(row);
             resultsTable.push(row);
