@@ -55,6 +55,47 @@ hcvGenie.findBands = (function () {
             // Just the 150 dpi pg 11
             // CONSTS = {"grey":{"avg":0.8099347511460142,"median":0.5286403296044344,"horz":-0.0012911894535421527,"vert":0.00014158105398226842,"avg_horz":0.005579765541756885,"avg_vert":-0.03962859008811073,"med_horz":0,"med_vert":0,"constant":0.2754904850284524,"minimum":-0.05372411989239578},"distance":{"height":0.10946627817548815,"width":1.3947702656868408,"constant":-0.014114434728571528},"distance2":{"height":-0.005070797118440651,"width":0.5752014278041154,"sixScore":0.6846678935085125,"constant":-0.012740480027415518}},
             //Derived from training sets
+<<<<<<< HEAD
+=======
+            distance_height_band_rat = 0.128349036,
+            distance_width_band_rat = 1.227918574,
+            distance_constant_band_rat = 0.007977998,
+
+            // distance_constant_band_rat = 0.0485802080124064,
+            // distance_height_band_rat = -26.623046832386127,
+            // distance_width_band_rat = 1.54676646183801,
+
+            //Post better six score calc - lots of testing...
+            // distance2_constant_band_rat = 0.0483728056694675,
+            // distance2_height_band_rat = 0.000464581012733501,
+            // distance2_width_band_rat = 1.33847362845221,
+            // distance2_sixScore_band_rat = 0.13044095127234,
+
+            // For test that was just done
+            distance2_height_band_rat = 0.054515111,
+            distance2_width_band_rat = -0.011833862,
+            distance2_sixScore_band_rat = 0.899318637,
+            distance2_constant_band_rat = 0.010102984,
+
+            //Test 2...
+            // distance2_constant_band_rat = 0.0265064097696132,
+            // distance2_height_band_rat = 0.0265064097696132,
+            // distance2_width_band_rat = 1.023597047521722,
+            // distance2_sixScore_band_rat = 0,
+
+            checks_const_object = {
+        avg: 2.025167605,
+        median: 0.289732476,
+        horz: -0.000853717,
+        vert: -8.61936E-055,
+        avg_horz: 0.012196369,
+        avg_vert: 0.017936552,
+        med_horz: 0,
+        med_vert: 0,
+        constant: -0.271256043,
+        minimum: 0.171387546
+    },
+>>>>>>> parent of 4568215... update banding object options
 
     //Global Objects
             colorDistanceWorker, houghTransformWorker, edgeDetectionWorker,
