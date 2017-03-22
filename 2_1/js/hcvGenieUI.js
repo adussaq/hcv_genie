@@ -58,7 +58,7 @@ var glob, global2 = [];
             image: {
                 type: 'pdf',
                 pageNumber: 1,
-                url: 'http://127.0.0.1:8000/dataExamples/pages/page' + page + '.pdf',
+                url: '../dataExamples/pages/page' + page + '.pdf',
                 scale: 2.25
             },
             onchange: createTable
