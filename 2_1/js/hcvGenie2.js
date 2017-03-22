@@ -55,11 +55,6 @@ hcvGenie.findBands = (function () {
             // Just the 150 dpi pg 11
             // CONSTS = {"grey":{"avg":0.8099347511460142,"median":0.5286403296044344,"horz":-0.0012911894535421527,"vert":0.00014158105398226842,"avg_horz":0.005579765541756885,"avg_vert":-0.03962859008811073,"med_horz":0,"med_vert":0,"constant":0.2754904850284524,"minimum":-0.05372411989239578},"distance":{"height":0.10946627817548815,"width":1.3947702656868408,"constant":-0.014114434728571528},"distance2":{"height":-0.005070797118440651,"width":0.5752014278041154,"sixScore":0.6846678935085125,"constant":-0.012740480027415518}},
             //Derived from training sets
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> parent of 4568215... update banding object options
             distance_height_band_rat = 0.128349036,
             distance_width_band_rat = 1.227918574,
             distance_constant_band_rat = 0.007977998,
@@ -98,7 +93,6 @@ hcvGenie.findBands = (function () {
         constant: -0.271256043,
         minimum: 0.171387546
     },
->>>>>>> parent of 4568215... update banding object options
 
     //Global Objects
             colorDistanceWorker, houghTransformWorker, edgeDetectionWorker,
