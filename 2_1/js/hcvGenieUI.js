@@ -158,19 +158,19 @@ var glob, global2 = [];
         textAnswer.empty();
         resultsTable = [];
 
-        textAnswer.append('<div class="alert alert-warning" role="alert">*<em>Do not click on the image once you use the table below. To change band calls begin by interacting with the image. Any changes to the table below will only be indicated in the report. Any changes done to the image will overwrite changes performed on the table in favor of the image state.</em></div>');
+        textAnswer.append('<p>*<em>To change band calls begin by interacting with the image. Any changes to the table below will only be indicated in the report. Any changes done to the image will overwrite changes performed on the table in favor of the image state.</em></p>');
         table.appendTo(textAnswer);
         table.append($('<tr><th style="width:10%">Lane</th>' +
-                '<th style="width:40%">Genotype</th>' +
-                '<th style="width:50%">Banding Pattern</th></tr>'));
+                '<th style="width:30%">Genotype</th>' +
+                '<th style="width:60%">Banding Pattern</th></tr>'));
         for (lane = 0; lane < lanes.length; lane += 1) {
             band = getBandNumbers(lanes[lane].bands);
             row = $('<tr>', {
                 html: '<td>' + (lane + 1) + '</td>' +
-                        '<td id="' + band.genotype_id + '"><p style="padding-bottom:14px;">' +
-                        lanes[lane].genotype + '</p><p>Patient Name: <input type="text" class="form-control" /></p></td>' +
-                        '<td><p>' +
-                        band.string + '</p><p>Accession Number: <input type="text" class="form-control" /></p></td></tr>'
+                        '<td id="' + band.genotype_id + '">' +
+                        lanes[lane].genotype + '</td>' +
+                        '<td>' +
+                        band.string + '</td></th>'
             });
             tempTabStr.push((lane + 1) + '\t ' + band.string.replace(/[\S\s]+\"([\d,\s]+)\">?/, '$1') + '\t ' + lanes[lane].genotype);
             table.append(row);
@@ -245,7 +245,7 @@ var glob, global2 = [];
         //rows: tg-ump5
         //make header
 
-        console.log(resultsTable);
+        // console.log(resultsTable);
         tableRow = $('<tr>').appendTo(fakeTable);
         tableRow.append($('<th>', {
             class: "tg-5xks",
@@ -264,42 +264,28 @@ var glob, global2 = [];
         }));
         tableRow.append($('<th>', {
             class: "tg-5xks",
-            text: "Patient Name",
-            style: "width:22%"
-        }));
-        tableRow.append($('<th>', {
-            class: "tg-5xks",
-            text: "Accession Number",
-            style: "width:23%"
+            text: "Notes",
+            style: "width:45%"
         }));
 
         for (i = 0; i < resultsTable.length; i += 1) {
             tableRow = $('<tr>').appendTo(fakeTable);
-            //samp Number
             tableRow.append($('<td>', {
                 class: "tg-ump5",
                 text: $(resultsTable[i].children()[0]).text()
             }));
-            //Genotype
             tableRow.append($('<td>', {
                 class: "tg-ump5",
-                text: $(resultsTable[i].children()[1].children[0]).text()
+                text: $(resultsTable[i].children()[1]).text()
             }));
-            //Bands
             tableRow.append($('<td>', {
                 class: "tg-ump5",
-                text: $(resultsTable[i].children()[2].children[0].children[0]).val(
+                text: $(resultsTable[i].children()[2]).children().val(
                 ).split(/\D+/).join(', ')
             }));
-            // Name
             tableRow.append($('<td>', {
                 class: "tg-ump5",
-                text: $(resultsTable[i].children()[1].children[1].children[0]).val()
-            }));
-            // Acc Number
-            tableRow.append($('<td>', {
-                class: "tg-ump5",
-                text: $(resultsTable[i].children()[2].children[1].children[0]).val()
+                html: '&nbsp;'
             }));
         }
 
