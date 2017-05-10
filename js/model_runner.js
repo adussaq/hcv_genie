@@ -15,7 +15,7 @@ var globModel = [];
         if (window.location.search && window.location.search.match(/[?&]data=[^&?#]+/)) {
             constantURL = window.location.search.match(/([?&]data=)([^&?#]+)/)[2];
         } else {
-            constantURL = '/json/default_params.json';
+            constantURL = './json/default_params.json';
         }
         $.get(constantURL, function (x) {
             constants_object = x;
@@ -118,7 +118,7 @@ var globModel = [];
                     banding_obj.model_fit_data().then(function (dataObj) {
                         startFitting(dataObj, file, url, scale);
                     });
-                })).append('<p>Correct any errors before continuing. This will run 4 times on each image at different zoom levels, then it will generate an object for you to download. Or you will be able to add another image to create a more stable soultion.</p>'));
+                })).append('<p>Correct any errors before continuing. This will run 3 times on each image at different zoom levels, then it will generate an object for you to download. Or you will be able to add another image to create a more stable soultion.</p>'));
             });
             proccessedImg.append(hcvG_results.canvasObject.canvasHolder);
             //We have to set the height of the parent div to that of the children...
