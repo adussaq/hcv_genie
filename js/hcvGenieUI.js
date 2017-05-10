@@ -1,11 +1,11 @@
-/*global amd_ww, jsPDF, rasterizeHTML, window, FileReader, hcvGenie, PDFJS console, document, checkPromises, jQuery*/
-var glob;
+/*global amd_ww, jsPDF, alert, rasterizeHTML, window, FileReader, hcvGenie, PDFJS console, document, checkPromises, jQuery*/
+var glob, global2 = [];
 (function () {
     'use strict';
         //functions
     var getAndRunSample, $ = jQuery, displayResults, getBandNumbers,
             updateGenotypeCall, getFile, convertTableToImage, scaleCanvas,
-            cropCanvas, makePDF,
+            cropCanvas, makePDF, createTable, constants_object,
             //UI Elements
             textAnswer, /*originalImage,*/ proccessedImg, dropRegion,
             saveButton, sampleButton, fromComputerButton,
@@ -17,18 +17,56 @@ var glob;
     textAnswer = $('#textResults');
     // originalImage = $('#originalImage'); //Not yet showing
     proccessedImg = $('#imageResults');
+    var parentOfImg = $('#fixer');
+    parentOfImg.on('affix.bs.affix', function () {
+        parentOfImg.parent().css("min-height", proccessedImg.height());
+        parentOfImg.css("max-width", proccessedImg.width());
+    });
+    parentOfImg.affix({
+        offset: {
+            top: parentOfImg.offset().top - 51
+        }
+    });
+
+    //set on resize?
+    window.onresize = function () {
+        //essentially to deal with the resize of the page we have to destory
+        // the old affix point and create a new one... Here it is.
+        var temp = $('<div id="fixer"></div>');
+        proccessedImg.detach().appendTo(temp);
+        temp.appendTo(parentOfImg.parent());
+        parentOfImg.remove();
+        parentOfImg = temp;
+        parentOfImg.on('affix.bs.affix', function () {
+            parentOfImg.parent().css("min-height", proccessedImg.height());
+            parentOfImg.css("max-width", proccessedImg.width());
+        });
+        parentOfImg.affix({
+            offset: {
+                top: parentOfImg.offset().top - 51
+            }
+        });
+        parentOfImg.parent().css("min-height", proccessedImg.height());
+        parentOfImg.css("max-width", proccessedImg.width());
+    };
+
     dropRegion = $('#drop');
 
     getAndRunSample = function () {
         var page = Math.round(Math.random() * 46 + 1);
-        hcvGenie.findBands({
-            image: {
-                type: 'pdf',
-                pageNumber: 1,
-                url: './dataExamples/pages/page' + page + '.pdf',
-                scale: 2.25
-            }
-        }).then(displayResults);
+        //block this from running if we do not have the contants object yet
+        if (constants_object) {
+            hcvGenie.findBands({
+                image: {
+                    type: 'pdf',
+                    pageNumber: 1,
+                    url: '../dataExamples/pages/page' + page + '.pdf',
+                    scale: 2.25,
+                    parameters: constants_object
+                },
+                onchange: createTable
+            }).then(displayResults);
+        }
     };
 
     getBandNumbers = function (bandArr) {
@@ -57,9 +95,9 @@ var glob;
 
             //Only do anything if every number is recognized
             if (banding.match(/^[\s,\d]+$/)) {
-                bandArr = banding.split(/,/);
+                bandArr = banding.split(/,|\s|;/);
                 hcvGenie.genotype(bandArr).then(function (res) {
-                    console.log(res);
+                    // console.log(res);
                     $('#' + bandObj.genotype_id).text(res);
                 });
             }
@@ -68,6 +106,11 @@ var glob;
 
     displayResults = function (hcvG_results) {
         //Display original canvas:
+        var bandingObj;
+        // console.log(hcvG_results);
+        //empty the old result
+        proccessedImg.empty();
+        //Now put in the new one
         scaleCanvas({
             canvas: $(hcvG_results.canvas),
             all: true
@@ -85,35 +128,24 @@ var glob;
         // });
 
         //Update band locations
-        hcvG_results.bandLocationPromise.then(function (results) {
-            var lane, table, band, row;
-            console.log('here', results.lanes, results.region);
+        hcvG_results.bandingPromise.then(function (temp) {
+            bandingObj = temp;
+            return bandingObj.lanePromise;
+        }).then(function (results) {
+            // console.log('here', results.lanes(), results.region, hcvG_results);
+
+            //temporary until functions are linked together...
+
             //Shift the analysis region
             scaleCanvas({
                 canvas: $(hcvG_results.canvas),
                 all: false,
                 region: results.region
             });
-            glob = results;
+            glob = bandingObj;
             //make table and insert the results
-            table = $('<table class="table table-hover" style="width:100%">');
-            table.appendTo(textAnswer);
-            table.append($('<tr><th style="width:10%">Lane</th>' +
-                    '<th style="width:30%">Genotype</th>' +
-                    '<th style="width:60%">Banding Pattern</th></tr>'));
-            for (lane = 0; lane < results.lanes.length; lane += 1) {
-                band = getBandNumbers(results.lanes[lane].bands);
-                row = $('<tr>', {
-                    html: '<td>' + (lane + 1) + '</td>' +
-                            '<td id="' + band.genotype_id + '">' +
-                            results.lanes[lane].genotype + '</td>' +
-                            '<td>' +
-                            band.string + '</td></th>'
-                });
-                table.append(row);
-                resultsTable.push(row);
-                $('#' + band.form_id).keyup(updateGenotypeCall(band));
-            }
+            createTable(results.lanes());
+
             sampleButtonClicked = false;
             finished = true;
             saveButton.toggleClass('disabled');
@@ -123,9 +155,39 @@ var glob;
         });
     };
 
+    createTable = function (lanes) {
+        var lane, table, band, row, tempTabStr = [];
+
+        table = $('<table class="table table-hover" style="width:100%">');
+        textAnswer.empty();
+        resultsTable = [];
+
+        textAnswer.append('<p>*<em>To change band calls begin by interacting with the image. Any changes to the table below will only be indicated in the report. Any changes done to the image will overwrite changes performed on the table in favor of the image state.</em></p>');
+        table.appendTo(textAnswer);
+        table.append($('<tr><th style="width:10%">Lane</th>' +
+                '<th style="width:30%">Genotype</th>' +
+                '<th style="width:60%">Banding Pattern</th></tr>'));
+        for (lane = 0; lane < lanes.length; lane += 1) {
+            band = getBandNumbers(lanes[lane].bands);
+            row = $('<tr>', {
+                html: '<td>' + (lane + 1) + '</td>' +
+                        '<td id="' + band.genotype_id + '">' +
+                        lanes[lane].genotype + '</td>' +
+                        '<td>' +
+                        band.string + '</td></th>'
+            });
+            tempTabStr.push((lane + 1) + '\t ' + band.string.replace(/[\S\s]+\"([\d,\s]+)\">?/, '$1') + '\t ' + lanes[lane].genotype);
+            table.append(row);
+            resultsTable.push(row);
+            $('#' + band.form_id).keyup(updateGenotypeCall(band));
+        }
+        console.log(tempTabStr.join('\n'));
+    };
+
     cropCanvas = function () {
-        var tempCanvas, oldCanvas, ctx;
-        oldCanvas = $(proccessedImg.children()[0]);
+        var tempCanvas, ctx, mainPart = $(proccessedImg.children()[0]),
+                oldCanvas = $(proccessedImg.children().children()[0]),
+                drawCanvas = $(proccessedImg.children().children()[1]);
 
         tempCanvas = document.createElement('canvas');
         tempCanvas.width = proccessedImg.width();
@@ -133,14 +195,22 @@ var glob;
         ctx = tempCanvas.getContext('2d');
         ctx.drawImage(
             oldCanvas[0],
-            oldCanvas.css('margin-left').replace(/px/, ""),
-            oldCanvas.css('margin-top').replace(/px/, ""),
-            oldCanvas.css('width').replace(/px/, ""),
-            oldCanvas.css('width').replace(/px/, "") *
+            mainPart.css('margin-left').replace(/px/, ""),
+            mainPart.css('margin-top').replace(/px/, ""),
+            mainPart.css('width').replace(/px/, ""),
+            mainPart.css('width').replace(/px/, "") *
+                    oldCanvas.height() / oldCanvas.width()
+        );
+        ctx.drawImage(
+            drawCanvas[0],
+            mainPart.css('margin-left').replace(/px/, ""),
+            mainPart.css('margin-top').replace(/px/, ""),
+            mainPart.css('width').replace(/px/, ""),
+            mainPart.css('width').replace(/px/, "") *
                     oldCanvas.height() / oldCanvas.width()
         );
 
-        console.log('here to crop');
+        // console.log('here to crop');
 
         return Promise.resolve({
             imgURL: tempCanvas.toDataURL(),
@@ -178,6 +248,8 @@ var glob;
         //headers: tg-5xks
         //rows: tg-ump5
         //make header
+
+        // console.log(resultsTable);
         tableRow = $('<tr>').appendTo(fakeTable);
         tableRow.append($('<th>', {
             class: "tg-5xks",
@@ -282,7 +354,7 @@ var glob;
                 11 / 8.5
             );
 
-            return pdf.addImage(proccessedImg.children()[0].toDataURL(), 'png',
+            return pdf.addImage(proccessedImg.children().children()[0].toDataURL(), 'png',
                     0, 0, 210, 210 * finalRat);
         }).then(function () {
             pdf.save(filename);
@@ -291,7 +363,7 @@ var glob;
     };
 
     getFile = function (file) {
-        if (window.File && window.FileReader && window.FileList && window.Blob) {
+        if (constants_object && window.File && window.FileReader && window.FileList && window.Blob) {
             //this function is called when the input loads an image
             var url, reader = new FileReader();
             reader.onload = function (event) {
@@ -302,15 +374,19 @@ var glob;
                             type: 'pdf',
                             pageNumber: 1,
                             url: url,
-                            scale: 2.25
-                        }
+                            scale: 2.2,
+                            parameters: constants_object
+                        },
+                        onchange: createTable
                     }).then(displayResults);
                 } else {
                     hcvGenie.findBands({
                         image: {
                             type: 'png',
-                            url: url
-                        }
+                            url: url,
+                            parameters: constants_object
+                        },
+                        onchange: createTable
                     }).then(displayResults);
                 }
             };
@@ -326,36 +402,40 @@ var glob;
         var resize;
         if (obj.all) {
             resize = function () {
-                proccessedImg.empty();
+                //Resets for a new image coming in...
+                // proccessedImg.empty();
                 proccessedImg.css("overflow", "");
                 proccessedImg.css("height", "");
                 proccessedImg.append(
                     obj.canvas.width(proccessedImg.width())
                 );
-                console.log('resizing all');
+                // console.log('resizing all');
             };
         } else {
             resize = function () {
                 var width, widthRat, imgBuff, imgWidth, top, height;
-                proccessedImg.empty();
+                // proccessedImg.empty();
                 width = proccessedImg.width();
                 imgBuff = Math.min(
                     obj.region.min[0],
                     obj.region.width - obj.region.max[0]
                 );
+
                 imgWidth = obj.region.width - 2 * imgBuff;
                 widthRat = width / imgWidth;
                 top = -1 * obj.region.min[1] * widthRat;
                 height = (obj.region.max[1] - obj.region.min[1]) *
                         widthRat;
                 proccessedImg.css("overflow", "hidden");
+                proccessedImg.css("position", "relative");
                 proccessedImg.css("height", height);
+                proccessedImg.attr("class", "my-img-thumbnail");
                 proccessedImg.append(
                     obj.canvas.width(width + 2 * imgBuff * widthRat)
                 );
                 obj.canvas.css("margin-top", top);
                 obj.canvas.css("margin-left", -imgBuff * widthRat);
-                console.log('resizing part', width, imgWidth);
+                // console.log('resizing part', width, imgWidth);
             };
         }
         resize();
@@ -478,7 +558,7 @@ var glob;
     //Set up tabs
     (function () {
         $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            var target = $(e.target).attr("href") // activated tab
+            var target = $(e.target).attr("href"); // activated tab
             if (target !== '#home') {
                 window.location.hash = target;
             } else {
@@ -487,10 +567,25 @@ var glob;
             window.scrollTo(0, 0);
         });
     }());
+
     window.onload = function () {
+        var constantURL;
         window.scrollTo(0, 0);
         if (window.location.hash) {
             $('a[href="' + window.location.hash + '"]').click();
         }
+        if (window.location.search && window.location.search.match(/[?&]data=[^&?#]+/)) {
+            constantURL = window.location.search.match(/([?&]data=)([^&?#]+)/)[2];
+        } else {
+            constantURL = '/json/default_params.json';
+        }
+        $.get(constantURL, function (x) {
+            constants_object = x;
+
+        }).fail(function () {
+            $('#home').children().hide();
+            $('#home').append('<div class="container well">Failed to load constants object, this tool does not work without that. Please provide it in the url using a data= tag, or remove the data= tag to utilize the defaults.</div>');
+            alert("Failed to get constants object, make sure your '?data=...' URL is correct and CORS enabled.");
+        });
     };
 }());

@@ -1,7 +1,9 @@
-/*global amd_ww, hcvGenie, PDFJS console, document, checkPromises, jQuery*/
+/*global amd_ww, hcvGenie, PDFJS console, document, checkPromises, jQuery, $*/
 var hcvGenie = {};
 var medianSignals = [];
+var acceptedMedians = [];
 var posDistances = [];
+var failedRects = [];
 hcvGenie.findBands = (function () {
     'use strict';
 
@@ -16,10 +18,11 @@ hcvGenie.findBands = (function () {
 
     //Functions
     var findBandLocations, findGreenRectangles, findGreenRegion,
-            pdf2canvas, processCanvas, makeCanvasObject,
+            pdf2canvas, processCanvas, makeCanvasObject, setUpClickFuncs,
             main, findPositiveNeighborRegion, outlineRectangle,
             numericalSort, calculateMedian, medianGrey, round,
-            callGenotype,
+            callGenotype, respondToClick, iWalked, rectFound,
+            undoColoring, addBand, calcMedianGrey, onchange, paramsOK,
     //Constants
             roundDigit = 10000,
             // greenXYZ = [76.28056296, -35.52371953, 23.79405389],
@@ -29,7 +32,7 @@ hcvGenie.findBands = (function () {
             //No need to run this if there aren't at least 4 x areas
             labColorDistMaxArea = labColorSectionSide * labColorSectionSide * 4,
             minGreenDist = 15, minimum_green_edge = 10,
-            minimum_grey_edge = 0.025,
+            minimum_grey_edge = 0.05,
             //The following two sets of data were established using 853 example
             // bands across 10 gels. This was measured by varying the scale
             // uniformly random from 2 to 5 from the pdf sample sent to me.
@@ -39,43 +42,42 @@ hcvGenie.findBands = (function () {
             // distances for all the bands that are <= #6 and averages those
             // distances as an additional, less variant, more highly weighted
             // solution.
-            //Derived from training sets
-            distance_constant_band_rat = 0.020734842905516,
-            distance_height_band_rat = 0.116001002429100,
-            distance_width_band_rat = 1.255947650078826,
-            //Post better six score calc
-            distance2_constant_band_rat = 0.004844371294825,
-            distance2_height_band_rat = -0.050834339328904,
-            distance2_width_band_rat = 0.150816456427006,
-            distance2_sixScore_band_rat = 1.009819205853457,
-            minimumMedianGrey = 0.145,
-                // For 20 pages the results were as follows (Min Grey Edge 0.025)
-                //pgs 1-20 after list correction 1:
-                // {falsePos: 2, falseNeg: 36, truePos: 1822, trueNeg: 5065, possibleBands: 6925}
+            CONSTS,
+            //Derived from training sets - final version...
+            // CONSTS = {"grey":{"avg":1.6610618397421548,"median":0.38757400854705043,"horz":-0.000991798099228899,"vert":-0.000058297930746602716,"avg_horz":0.018609796526077926,"avg_vert":0.007040155327921288,"med_horz":0,"med_vert":0,"constant":-0.2071098879225205,"minimum":0.20642615662898506},"distance":{"height":0.11794033910745608,"width":1.2547484108366547,"constant":0.01295329735651057},"distance2":{"height":0.0464379552605775,"width":-0.013883466855960229,"sixScore":0.9142819178400069,"constant":0.01260090260756326}},
+
+            //Just the 300 dpi pg 11
+            // CONSTS = {"grey":{"avg":-0.24831971900284405,"median":0.8403876869942664,"horz":-0.0007164391404427304,"vert":0.00022867915393129907,"avg_horz":0.00388579699778241,"avg_vert":-0.019171205401204386,"med_horz":0,"med_vert":0,"constant":0.15056370604903857,"minimum":0.08844809012974479},"distance":{"height":0.06268147904824412,"width":1.4254908108038138,"constant":-0.021653620358910025},"distance2":{"height":0.0768887477796735,"width":-0.05477499536133221,"sixScore":0.8946927092170983,"constant":-0.019245431415881382}},
+
+            //Just the 200 dpi pg 11
+            // CONSTS = {"grey":{"avg":-0.12527270337108498,"median":0.7729418781169425,"horz":-0.0008544398632935942,"vert":0.00024001411256766277,"avg_horz":0.004600307004085605,"avg_vert":-0.02831185177770966,"med_horz":0,"med_vert":0,"constant":0.2191383437578874,"minimum":0.10783778546000644},"distance":{"height":0.05228046640838441,"width":1.4903287784434354,"constant":-0.014600310056396091},"distance2":{"height":0.0673778161184543,"width":-0.49939210564338044,"sixScore":1.1873542324244075,"constant":-0.015225448654877037}},
+
+            // Just the 150 dpi pg 11
+            // CONSTS = {"grey":{"avg":0.8099347511460142,"median":0.5286403296044344,"horz":-0.0012911894535421527,"vert":0.00014158105398226842,"avg_horz":0.005579765541756885,"avg_vert":-0.03962859008811073,"med_horz":0,"med_vert":0,"constant":0.2754904850284524,"minimum":-0.05372411989239578},"distance":{"height":0.10946627817548815,"width":1.3947702656868408,"constant":-0.014114434728571528},"distance2":{"height":-0.005070797118440651,"width":0.5752014278041154,"sixScore":0.6846678935085125,"constant":-0.012740480027415518}},
 
     //Global Objects
             colorDistanceWorker, houghTransformWorker, edgeDetectionWorker,
             vertHoughTransformWorker;
 
     colorDistanceWorker = amd_ww.startWorkers({
-        filename: './js/workers/colorDistanceWorker.min.js',
+        filename: '../js/workers/colorDistanceWorker.min.js',
         num_workers: 4
     });
 
     houghTransformWorker = amd_ww.startWorkers({
-        filename: './js/workers/houghTransformWorker.min.js',
+        filename: '../js/workers/houghTransformWorker.min.js',
         num_workers: 2 //Since Hough Transforms and edge detection often
                         // run simultaneously
     });
 
     vertHoughTransformWorker = amd_ww.startWorkers({
-        filename: './js/workers/vertHoughTransformWorker.min.js',
+        filename: '../js/workers/vertHoughTransformWorker.min.js',
         num_workers: 2 //Since Hough Transforms and edge detection often
                         // run simultaneously
     });
 
     edgeDetectionWorker = amd_ww.startWorkers({
-        filename: './js/workers/edgeDetectionWorker.min.js',
+        filename: '../js/workers/edgeDetectionWorker.min.js',
         num_workers: 2 //Since Hough Transforms and edge detection often
                         // run simultaneously
     });
@@ -84,10 +86,20 @@ hcvGenie.findBands = (function () {
         var medArr;
 
         medArr = JSON.parse(JSON.stringify(array));
-        medArr.sort(numericalSort);
+        medArr = medArr.sort(numericalSort);
 
-        return (medArr[Math.floor(medArr.length / 2)] +
-                medArr[Math.ceil(medArr.length / 2)]) / 2;
+        return (medArr[Math.floor((medArr.length - 1) / 2)] +
+                medArr[Math.ceil((medArr.length - 1) / 2)]) / 2;
+    };
+
+    undoColoring = function (colorPosArr, canvas) {
+        return function () {
+            var i;
+            for (i = 0; i < colorPosArr.length; i += 1) {
+                canvas.clearRect(colorPosArr[i][0], colorPosArr[i][1],
+                        colorPosArr[i][2], colorPosArr[i][3]);
+            }
+        };
     };
 
     callGenotype = function (lane) {
@@ -102,7 +114,7 @@ hcvGenie.findBands = (function () {
         var phi, thetaA, r, inc = 0, cosPhi, sinPhi, tempPhi, aShift,
                 x0 = rectParams.x0, y0 = rectParams.y0,
                 w = rectParams.width, h = rectParams.height,
-                theta0 = rectParams.theta, thetaS;
+                theta0 = rectParams.theta, thetaS, x, y, origin = [];
         thetaA = Math.atan2(h, w);
         //theta0 = 0;
         thetaS = thetaA + theta0;
@@ -148,13 +160,33 @@ hcvGenie.findBands = (function () {
             // console.log(Math.round(r * Math.cos(phi)+ x0), Math.round(r*Math.sin(phi)+ y0));
             // console.log(r, phi);
             //Using x = r cos phi and y = r sin(phi) plot a point
-            myCanvas.fillRect(Math.floor(r * Math.cos(phi) + x0 + 0.1),
-                    Math.floor(r * Math.sin(phi) + y0 + 0.1), 1, 1);
+            x = Math.floor(r * Math.cos(phi) + x0 + 0.1);
+            y = Math.floor(r * Math.sin(phi) + y0 + 0.1);
+            origin.push([x, y, 1, 1]);
+            myCanvas.fillRect(x, y, 1, 1);
             inc = Math.max(inc, Math.PI / 180);
         }
-        //plot center as cross
+        //plot center as cross (origin stuff)
+        origin.push([Math.round(x0), Math.round(y0) - 1, 1, 3]);
+        origin.push([Math.round(x0) - 1, Math.round(y0), 3, 1]);
+
+        //Actually plot it...
         myCanvas.fillRect(Math.round(x0), Math.round(y0) - 1, 1, 3);
         myCanvas.fillRect(Math.round(x0) - 1, Math.round(y0), 3, 1);
+
+        return undoColoring(origin, myCanvas);
+    };
+
+    paramsOK = function (rectangle) {
+        //Check a rectangle before it is adjusted
+        var ret = false;
+        if (rectangle.theta && rectangle.height && rectangle.width &&
+                rectangle.x0 && rectangle.y0 && Math.abs(rectangle.theta) +
+                Math.abs(rectangle.height) + Math.abs(rectangle.width) +
+                Math.abs(rectangle.x0) + Math.abs(rectangle.y0) < Infinity) {
+            ret = true;
+        }
+        return ret;
     };
 
     findBandLocations = function (myCanvas, rectangles) {
@@ -183,31 +215,35 @@ hcvGenie.findBands = (function () {
                 array: htEdges.array,
                 roundDigit: roundDigit
             }).then(function (rectangle) {
-                rectangle.HTscore = round(rectangle.HTscore /
-                        minimum_grey_edge / 50); // Note 50 > 10 used in
-                                                        // true rectangle
-                rectangle.bool = false;
-                rectangle.x0 += params.x_shift + htEdges.x_shift;
-                rectangle.y0 += params.y_shift + htEdges.y_shift;
-                // outlineRectangle(JSON.parse(JSON.stringify(rectangle)), '#800080', myCanvas);
-                rectangle.width = params.rect_width;
-                rectangle.height = params.rect_height;
-                // outlineRectangle(rectangle, '#FFA500', myCanvas);
+                if (rectangle.bool && paramsOK(rectangle)) {
+                    rectangle.HTscore = round(rectangle.HTscore /
+                            minimum_grey_edge / 50); // Note 50 > 10 used in
+                                                            // true rectangle
+                    rectangle.bool = false;
+                    rectangle.x0 += params.x_shift + htEdges.x_shift;
+                    rectangle.y0 += params.y_shift + htEdges.y_shift;
+                    // outlineRectangle(JSON.parse(JSON.stringify(rectangle)), '#800080', myCanvas);
+                    rectangle.width = params.rect_width;
+                    rectangle.height = params.rect_height;
+                    // outlineRectangle(rectangle, '#FFA500', myCanvas);
 
-                params.distances.push({
-                    distance2: round(Math.sqrt(Math.pow(rectangle.x0
-                            - params.x_origin, 2) +
-                            Math.pow(rectangle.y0 -
-                            params.y_origin, 2))),
-                    //Note that models for the below improved on the
-                    // above slightly.
-                    distance: round(Math.abs(rectangle.y0 -
-                            params.y_origin) * Math.sqrt(params.m *
-                            params.m + 1)),
-                    rectangle: rectangle
-                });
-                params = getmxb(params, rectangle);
-                next(edge.y + 1);
+                    params.distances.push({
+                        distance2: round(Math.sqrt(Math.pow(rectangle.x0
+                                - params.x_origin, 2) +
+                                Math.pow(rectangle.y0 -
+                                params.y_origin, 2))),
+                        //Note that models for the below improved on the
+                        // above slightly.
+                        distance: round(Math.abs(rectangle.y0 -
+                                params.y_origin) * Math.sqrt(params.m *
+                                params.m + 1)),
+                        rectangle: rectangle
+                    });
+                    params = getmxb(params, rectangle);
+                    next(edge.y + 1);
+                } else {
+                    next(edge.y + 1);
+                }
             }).catch(function (error) {
                 console.error(error);
             });
@@ -218,7 +254,8 @@ hcvGenie.findBands = (function () {
             var i, count, xy_m = 0, x_m = 0, y2_m = 0, y_m = 0, slope,
                     intercept, notfirst, x_m_0 = 0, xhere;
             //Add new points
-            //Rect scores seem to be in the 1000's
+            //Rect scores seem to be in the 1000's, weighting the center on how
+            // good the rectangle is...
             notfirst = params.linearArr.length;
             for (i = 0; i < rectangle.HTscore / 500 + 1; i += 1) {
                 params.linearArr.push([rectangle.y0, rectangle.x0]);
@@ -285,9 +322,9 @@ hcvGenie.findBands = (function () {
 
             //calculate hypotenuse based on width/height of rectangle and 26 max
             // lanes
-            roundedHypot = Math.ceil(100 * (27.5 - distance_constant_band_rat) /
-                    (distance_width_band_rat / width +
-                    distance_height_band_rat / height)) / 100;
+            roundedHypot = Math.ceil(100 * (27.5 - CONSTS.distance.constant) /
+                    (CONSTS.distance.width / width +
+                    CONSTS.distance.height / height)) / 100;
 
             //Determine the edge transformation boundries
             edgeY = Math.floor(height * 1.15 + y0); //To be sure that the height clears
@@ -373,16 +410,18 @@ hcvGenie.findBands = (function () {
         };
 
         performHoughTransform = function (edge, edges, params, next) {
-            var htEdges;
+            var htEdges, testRegionParams;
             if (!edge.end) {
                 htEdges = getHTEdgeArr(edge, edges, params);
-                outlineRectangle({
+                testRegionParams = {
                     x0: htEdges.array.length / 2 + params.x_shift + htEdges.x_shift,
                     y0: htEdges.array[0].length / 2 + params.y_shift + htEdges.y_shift,
                     height: htEdges.array[0].length,
                     theta: 0,
                     width: htEdges.array.length
-                }, '#FFFFCC', myCanvas);
+                };
+                // console.log(htEdges.array.length, htEdges.array[0].length);
+                outlineRectangle(testRegionParams, '#FFFFCC', myCanvas);
                 houghTransformWorker.submit({
                     array: htEdges.array,
                     roundDigit: roundDigit
@@ -394,6 +433,7 @@ hcvGenie.findBands = (function () {
                     //Adjust score as a function of minimum edge
                     rectangle.HTscore = round(rectangle.HTscore /
                             minimum_grey_edge / 10); //min edge is too small
+                    rectangle.HT_ret = JSON.parse(JSON.stringify(rectangle));
 
                     rectangle.x0 += params.x_shift + htEdges.x_shift;
                     rectangle.y0 += params.y_shift + htEdges.y_shift;
@@ -438,28 +478,70 @@ hcvGenie.findBands = (function () {
                     rectangle.y0 = round(rectangle.y0);
 
                     medianGrey(rectangle, myCanvas).then(function (greyScore) {
-                        if (greyScore > minimumMedianGrey) {
+                        var checks, distanceFromGuess, check2;
+                        distanceFromGuess = Math.sqrt(
+                            Math.pow(rectangle.y0 - testRegionParams.y0, 2) +
+                                Math.pow(rectangle.x0 - testRegionParams.x0, 2)
+                        );
+                        //We check distance because if the spot checked is really
+                        // wrong it will come back and think it is somewhere
+                        // entirely off the strip.
+
+                        check2 = {
+                            //Overall strength of signal checks
+                            avg: greyScore.avg,
+                            median: greyScore.median,
+                            //Edge strength
+                            horz: (rectangle.HT_horz[0] + rectangle.HT_horz[1]) / rectangle.width,
+                            vert: (rectangle.HT_vert[0] + rectangle.HT_vert[1]) / rectangle.height,
+
+                            //ratio
+                            avg_horz: -Math.log(greyScore.avg / ((rectangle.HT_horz[0] + rectangle.HT_horz[1]) / rectangle.width)),
+                            avg_vert: -Math.log(greyScore.avg / ((rectangle.HT_vert[0] + rectangle.HT_vert[1]) / rectangle.height)),
+                            med_horz: -Math.log(greyScore.median / ((rectangle.HT_horz[0] + rectangle.HT_horz[1]) / rectangle.width)),
+                            med_vert: -Math.log(greyScore.median / ((rectangle.HT_vert[0] + rectangle.HT_vert[1]) / rectangle.height))
+                        };
+
+                        //new...
+                        checks = Object.keys(check2).map(function (key) {
+                            return check2[key] * CONSTS.grey[key];
+                        }).reduce(function (a, b) {
+                            return a + b;
+                        }) + CONSTS.grey.constant;
+
+                        if (checks > CONSTS.grey.minimum && distanceFromGuess < rectangle.width) {
+                        // if (check2 < 5 && check2 > 4 && distanceFromGuess < rectangle.width) {
+
+                            //We accept that this is a rectangle
+                            acceptedMedians.push([checks, greyScore.avg, greyScore.median, rectangle.HTscore]);
                             params.rect_width = rectangle.width;
                             params.rect_height = rectangle.height;
                             params.theta = rectangle.theta;
                             rectangle.greyScore = greyScore;
+                            rectangle.greyScore.checks = checks;
+                            rectangle.greyScore.check2 = check2;
+                            rectangle.InitialParams = testRegionParams;
                             params = getmxb(params, rectangle);
-                            outlineRectangle(rectangle, '#FFA500', myCanvas);
+                            var undo = outlineRectangle(rectangle, '#FFA500', myCanvas);
+                            // rectFound(rectangle, params);
                             params.distances.push({
-                                distance2: round(Math.sqrt(Math.pow(rectangle.x0
+                                distance: round(Math.sqrt(Math.pow(rectangle.x0
                                         - params.x_origin, 2) +
                                         Math.pow(rectangle.y0 -
                                         params.y_origin, 2))),
                                 //Note that models for the below improved on the
                                 // above slightly.
-                                distance: round(Math.abs(rectangle.y0 -
-                                        params.y_origin) * Math.sqrt(params.m *
-                                        params.m + 1)),
+                                // distance2: round(Math.abs(rectangle.y0 -
+                                //         params.y_origin) * Math.sqrt(params.m *
+                                //         params.m + 1)),
                                 rectangle: rectangle
                             });
+                            rectangle.clear = undo;
                             //Just upped to 1.555 from 1.55 to try and skip a double call
-                            next(Math.floor(edge.y + params.rect_height * 1.555));
+                            next(Math.floor(rectangle.y0 - params.y_shift +
+                                    params.rect_height));
                         } else {
+                            failedRects.push([checks, greyScore.avg, greyScore.median, rectangle.HTscore]);
                             next(Math.floor(edge.y + 2));
                         }
                     });
@@ -489,6 +571,10 @@ hcvGenie.findBands = (function () {
                     myCanvas.fillRect(Math.round(xPos + params.x_shift),
                             Math.round(yPos + params.y_shift), 1, 1);
 
+                    iWalked(xPos + params.x_shift, yPos + params.y_shift, params.lane_number);
+
+                    // walkedHere(xPos + params.x_shift, yPos + params.y_shift);
+
                     //If we find an edge
                     for (xRange = 0; xRange < 1 && !edgeFound; xRange += 1) {
                         if (
@@ -496,18 +582,18 @@ hcvGenie.findBands = (function () {
                             edges[xPos + xRange][yPos].direction === 0 &&
                             edges[xPos + xRange][yPos].strength > 0
                         ) {
+                            edgeFound = true;
                             blankCheck = 0.95 * (params.distances.length + 1);
                             performHoughTransform({x: xPos, y: yPos,
                                     end: false}, edges, params, walkFunction);
-                            edgeFound = true;
                         }
                     }
 
-                    if (count > blankCheck * params.rect_width) {
+                    if (!edgeFound && count > blankCheck * params.rect_width) {
+                        edgeFound = true;
                         vertHoughTrans({x: xPos, y: yPos,
                                 end: false}, edges, params, walkFunction);
                         blankCheck = 1.5 + 0.95 * (params.distances.length);
-                        edgeFound = true;
                     }
                     yPos += 1;
                     count += 1;
@@ -536,12 +622,13 @@ hcvGenie.findBands = (function () {
             });
         };
 
-        moveDownLane = function (boarderParams, rectangle, rectangleScore) {
+        moveDownLane = function (boarderParams, rectangle, rectangleScore, laneNumber) {
             return function (edges) {
                 var yPos, params;
                 yPos = 0;
-
+                // console.log(edges.length, edges[0].length, laneNumber, rectangle);
                 params = {
+                    lane_number: laneNumber,
                     x_shift: boarderParams.x_shift_left,
                     y_shift: boarderParams.y_shift_down,
                     x_center: rectangle.x0,
@@ -615,15 +702,200 @@ hcvGenie.findBands = (function () {
                     startEdgeDetection
                 ).then(
                     moveDownLane(boarderParams, rectangles[i],
-                            greenRectangleScore)
+                            greenRectangleScore, i)
                 ));
             }
         }());
 
-        distancePromise = Promise.all(lanePromises).then(function (allLanes) {
+        distancePromise = {};
+
+        distancePromise.lanePromise = Promise.all(lanePromises).then(function (allLanes) {
             //calculate the actual lane calls
             var sixScore = 0, sixLimit, i, j, sixCount = 0, call, callArr = [],
-                    distance_cont, avgHeight = 0, avgWidth = 0, hwCount = 0;
+                    distance_cont, avgHeight = 0, avgWidth = 0, hwCount = 0,
+                    allLanesFunc, writtenText = [], changeCall,
+                    removeCall;
+
+            //Idea here is that in order to allow the allLanes object to be
+            // constantly updatable, we need to have it be a function rather
+            // than a real object. This object needs to be non editable in most
+            // cases, with editability very specified
+            allLanesFunc = function () {
+                var ret = JSON.parse(JSON.stringify(allLanes)), ii, jj;
+                //Now simplify the arrays
+                for (ii = 0; ii < ret.length; ii += 1) {
+                    for (jj = 0; jj < ret[ii].bands.length; jj += 1) {
+                        if (!ret[ii].bands[jj]) {
+                            ret[ii].bands.splice(jj, 1);
+                            jj -= 1;
+                        }
+                    }
+                }
+
+                //Add the special functions
+                return ret;
+            };
+
+            addBand = function (lane, rectangle) {
+                var distance;
+                distance = Math.sqrt(
+                    Math.pow(allLanes[lane].indicatorBand.x0 - rectangle.x0, 2) +
+                    Math.pow(allLanes[lane].indicatorBand.y0 - rectangle.y0, 2)
+                );
+                call = Math.round(distance *
+                        distance_cont + CONSTS.distance2.constant);
+
+                j = allLanes[lane].bands.length;
+                i = lane;
+
+                //update objects
+                allLanes[lane].bands.push({
+                    distance: distance,
+                    rectangle: rectangle,
+                    call: call,
+                    change_call: changeCall(i, j),
+                    remove: removeCall(i, j)
+                });
+                callArr[i].push(call);
+                writtenText[i][j] = [
+                    call,
+                    rectangle.x0 - avgWidth / 2.2,
+                    rectangle.y0 - avgHeight / 1.65,
+                    "Bold " + Math.round(avgHeight * 2) + "px Georgia"
+                ];
+
+                //write call on the canvas
+                myCanvas.fillText(
+                    writtenText[i][j][0],
+                    writtenText[i][j][1],
+                    writtenText[i][j][2],
+                    writtenText[i][j][3],
+                    '#8A2BE2'
+                );
+
+                return hcvGenie.genotype(callArr[i]).then(
+                    callGenotype(allLanes[i])
+                ).then(function () {
+                    return medianGrey(rectangle, myCanvas);
+                }).then(function (greyScore) {
+                    var checks, check2, rect;
+                    rect = allLanes[i].bands[j].rectangle;
+                    //We check distance because if the spot checked is really
+                    // wrong it will come back and think it is somewhere
+                    // entirely off the strip.
+
+                    check2 = {
+                        //Overall strength of signal checks
+                        avg: greyScore.avg,
+                        median: greyScore.median,
+                        //Edge strength
+                        horz: (rect.HT_horz[0] + rect.HT_horz[1]) / rect.width,
+                        vert: (rect.HT_vert[0] + rect.HT_vert[1]) / rect.height,
+
+                        //ratio
+                        avg_horz: -Math.log(greyScore.avg / ((rect.HT_horz[0] + rect.HT_horz[1]) / rectangle.width)),
+                        avg_vert: -Math.log(greyScore.avg / ((rect.HT_vert[0] + rect.HT_vert[1]) / rectangle.height)),
+                        med_horz: -Math.log(greyScore.median / ((rect.HT_horz[0] + rect.HT_horz[1]) / rectangle.width)),
+                        med_vert: -Math.log(greyScore.median / ((rect.HT_vert[0] + rect.HT_vert[1]) / rectangle.height))
+                    };
+
+                    checks = Object.keys(check2).map(function (key) {
+                        return check2[key] * CONSTS.grey[key];
+                    }).reduce(function (a, b) {
+                        return a + b;
+                    }) + CONSTS.grey.constant;
+
+                    //We accept that this is a rectangle
+                    rect.greyScore = greyScore;
+                    rect.greyScore.checks = checks;
+                    rect.greyScore.check2 = check2;
+
+                    allLanes[i].bands[j].rectangle = rect;
+
+                    return allLanes[i].bands[j];
+                }).then(function (band) {
+                    onchange(allLanesFunc());
+                    return rectFound(band, {lane_number: i}, allLanes[i]);
+                });
+            };
+
+            changeCall = function (i, j) {
+                return function (new_call) {
+                    var band = allLanes[i].bands[j], newCall = [], ii;
+
+                    //Actually update the objects
+                    band.call = new_call;
+                    callArr[i][j] = new_call;
+
+                    //Delete the old writing
+                    myCanvas.clearText(
+                        writtenText[i][j][0],
+                        writtenText[i][j][1],
+                        writtenText[i][j][2],
+                        writtenText[i][j][3]
+                    );
+
+                    //Add in new writting
+                    writtenText[i][j][0] = new_call;
+                    myCanvas.fillText(
+                        writtenText[i][j][0],
+                        writtenText[i][j][1],
+                        writtenText[i][j][2],
+                        writtenText[i][j][3],
+                        '#8A2BE2'
+                    );
+
+
+                    //Still needs to be done in case bands have been
+                    //removed
+                    for (ii = 0; ii < callArr[i].length; ii += 1) {
+                        if (callArr[i][ii]) {
+                            newCall.push(callArr[i][ii]);
+                        }
+                    }
+
+                    return hcvGenie.genotype(newCall).then(
+                        callGenotype(allLanes[i])
+                    ).then(function (x) {
+                        onchange(allLanesFunc());
+                        return x;
+                    });
+                };
+            };
+
+            removeCall = function (i, j) {
+                return function () {
+                    var band = allLanes[i].bands[j], newCall = [], ii;
+                    //get rid of rectangle
+                    band.rectangle.clear();
+
+                    //Get rid of the lable
+                    myCanvas.clearText(
+                        writtenText[i][j][0],
+                        writtenText[i][j][1],
+                        writtenText[i][j][2],
+                        writtenText[i][j][3]
+                    );
+
+                    //Actually delete the objects
+                    delete allLanes[i].bands[j];
+                    delete callArr[i][j];
+                    // console.log(band);
+
+                    for (ii = 0; ii < callArr[i].length; ii += 1) {
+                        if (callArr[i][ii]) {
+                            newCall.push(callArr[i][ii]);
+                        }
+                    }
+
+                    return hcvGenie.genotype(newCall).then(
+                        callGenotype(allLanes[i])
+                    ).then(function (x) {
+                        onchange(allLanesFunc());
+                        return x;
+                    });
+                };
+            };
 
             for (i = 0; i < allLanes.length; i += 1) {
                 avgHeight += (1 + allLanes[i].bands.length)
@@ -635,20 +907,20 @@ hcvGenie.findBands = (function () {
 
             avgHeight /= hwCount;
             avgWidth /= hwCount;
-            distance_cont = (distance_width_band_rat / avgWidth +
-                    distance_height_band_rat / avgHeight);
+            distance_cont = (CONSTS.distance.width / avgWidth +
+                    CONSTS.distance.height / avgHeight);
 
             //Concept here is simple, the first 6 bands are more accurately
             // called than the remaining, so calculating an average distance
             // across the entire sheet gives us significantly more prediction
             // power.
             for (i = 0; i < allLanes.length; i += 1) {
-                sixLimit = (6.5 - distance_constant_band_rat) / distance_cont;
+                sixLimit = (6.5 - CONSTS.distance.constant) / distance_cont;
                 for (j = 0; j < allLanes[i].bands.length; j += 1) {
                     if (allLanes[i].bands[j].rectangle.bool &&
                             allLanes[i].bands[j].distance < sixLimit) {
                         call = Math.round(allLanes[i].bands[j].distance *
-                                distance_cont + distance_constant_band_rat);
+                                distance_cont + CONSTS.distance.constant);
                         sixScore += allLanes[i].bands[j].distance / call;
                         sixCount += 1;
                     } else if (!allLanes[i].bands[j].rectangle.bool) {
@@ -661,24 +933,37 @@ hcvGenie.findBands = (function () {
             sixScore /= sixCount;
 
             //Now I have a 'six score' I can calculate the band calls!
-            distance_cont = distance2_width_band_rat / avgWidth +
-                    distance2_height_band_rat / avgHeight +
-                    distance2_sixScore_band_rat / sixScore;
+            distance_cont = CONSTS.distance2.width / avgWidth +
+                    CONSTS.distance2.height / avgHeight +
+                    CONSTS.distance2.sixScore / sixScore;
 
             for (i = 0; i < allLanes.length; i += 1) {
                 callArr[i] = [];
+                writtenText[i] = [];
                 for (j = 0; j < allLanes[i].bands.length; j += 1) {
                     call = Math.round(allLanes[i].bands[j].distance *
-                            distance_cont + distance2_constant_band_rat);
+                            distance_cont + CONSTS.distance2.constant);
+
                     allLanes[i].bands[j].call = call;
+                    allLanes[i].bands[j].change_call = changeCall(i, j);
+                    allLanes[i].bands[j].remove = removeCall(i, j);
+
+                    rectFound(allLanes[i].bands[j], {lane_number: i}, allLanes[i]);
+
                     callArr[i].push(call);
 
                     //Write call on canvas
-                    myCanvas.fillText(
+                    writtenText[i][j] = [
                         call,
                         allLanes[i].bands[j].rectangle.x0 - avgWidth / 2.2,
                         allLanes[i].bands[j].rectangle.y0 - avgHeight / 1.65,
-                        "Bold " + Math.round(avgHeight * 1.5) + "px Georgia",
+                        "Bold " + Math.round(avgHeight * 2) + "px Georgia"
+                    ];
+                    myCanvas.fillText(
+                        writtenText[i][j][0],
+                        writtenText[i][j][1],
+                        writtenText[i][j][2],
+                        writtenText[i][j][3],
                         '#8A2BE2'
                     );
                 }
@@ -687,7 +972,7 @@ hcvGenie.findBands = (function () {
                 );
             }
             return {
-                lanes: allLanes,
+                lanes: allLanesFunc,
                 rect_width: avgWidth,
                 rect_height: avgHeight,
                 six_score: sixScore,
@@ -695,6 +980,152 @@ hcvGenie.findBands = (function () {
             };
         });
 
+        distancePromise.model_fit_data = function () {
+            return distancePromise.lanePromise.then(function (lanesObj) {
+                var i, j, lanes = lanesObj.lanes(), band1, band2, angle,
+                        testPosition, pos = {x: 0, y: 0}, sortBands, sixScore,
+                        negativePromises = [], positives = [], distanceCall = [],
+                        reCalcSixScore;
+
+                sortBands = function (a, b) {
+                    return a.call - b.call;
+                };
+
+                testPosition = function (x, y, w, h) {
+                    return Promise.all([
+                        myCanvas.getGaus(
+                            myCanvas.getGrey,
+                            // The -1/+2 are because sobel edge detection  is the
+                            // following step which leaves off the outer boarder of the
+                            // array this adjustment will actually create the array we
+                            // expect based on the parameters
+                            Math.floor(x - w * 2 / 2) - 1,
+                            Math.floor(y - h * 1.75 / 2) - 1,
+                            Math.ceil(w * 2) + 2,
+                            Math.floor(h * 1.75) + 2
+                        ).then(function (gausArr) {
+                            return edgeDetectionWorker.submit({
+                                array: gausArr,
+                                non_maximum_suppression: 0, //this is field size for nms
+                                // 95.3005% for 0 vs 94.3716% for 1
+                                for_hough: true,
+                                roundDigit: roundDigit,
+                                minimum_edge: minimum_grey_edge
+                            });
+                        }).then(function (edges) {
+                            return houghTransformWorker.submit(edges);
+                        }),
+                        medianGrey({
+                            x0: x,
+                            y0: y,
+                            width: w,
+                            height: h
+                        }, myCanvas)
+                    ]).then(function (results) {
+                        var rectangle = results[0], greyScore = results[1];
+                        return {
+                            //Overall strength of signal checks
+                            avg: greyScore.avg,
+                            median: greyScore.median,
+                            //Edge strength
+                            horz: (rectangle.HT_horz[0] + rectangle.HT_horz[1]) / w,
+                            vert: (rectangle.HT_vert[0] + rectangle.HT_vert[1]) / h,
+
+                            //ratio
+                            avg_horz: -Math.log(greyScore.avg / ((rectangle.HT_horz[0] + rectangle.HT_horz[1]) / w)),
+                            avg_vert: -Math.log(greyScore.avg / ((rectangle.HT_vert[0] + rectangle.HT_vert[1]) / h)),
+                            med_horz: -Math.log(greyScore.median / ((rectangle.HT_horz[0] + rectangle.HT_horz[1]) / w)),
+                            med_vert: -Math.log(greyScore.median / ((rectangle.HT_vert[0] + rectangle.HT_vert[1]) / h))
+                        };
+                    });
+                };
+
+                reCalcSixScore = function () {
+                    var score = 0, count = 0;
+                    for (i = 0; i < lanes.length; i += 1) {
+                        lanes[i].bands = lanes[i].bands.sort(sortBands);
+                        for (j = 0; j < lanes[i].bands.length - 1; j += 1) {
+                            if (lanes[i].bands[j].call < 7) {
+                                score += lanes[i].bands[j].distance / lanes[i].bands[j].call;
+                                count += 1;
+                            }
+                        }
+                    }
+                    return score / count;
+                };
+
+                sixScore = reCalcSixScore();
+
+                // console.log('starting band stuff...');
+
+                for (i = 0; i < lanes.length; i += 1) {
+                    lanes[i].bands = lanes[i].bands.sort(sortBands);
+                    if (lanes[i].bands.length > 1) {
+                        for (j = 0; j < lanes[i].bands.length - 1; j += 1) {
+                            band1 = lanes[i].bands[j];
+                            positives.push(band1.rectangle.greyScore.check2);
+                            distanceCall.push([band1.call, band1.distance / lanesObj.rect_height, band1.distance / lanesObj.rect_width, band1.distance / sixScore]);
+                            band2 = lanes[i].bands[j + 1];
+                            if (band2.call - band1.call > 1) {
+                                angle = Math.atan2((band2.rectangle.y0 - band1.rectangle.y0),
+                                        (band2.rectangle.x0 - band1.rectangle.x0));
+                                pos.x = Math.cos(angle) * lanesObj.rect_height + band1.rectangle.x0;
+                                pos.y = Math.sin(angle) * lanesObj.rect_height + band1.rectangle.y0;
+                                while (pos.y < band2.rectangle.y0 - Math.sin(angle) * lanesObj.rect_height) {
+                                    //Test the position
+                                    negativePromises.push(testPosition(pos.x, pos.y, lanesObj.rect_width, lanesObj.rect_height));
+                                    myCanvas.fillRect(pos.x - 1, pos.y, 3, 1, '#228b22');
+
+                                    //Adjust the position
+                                    pos.x += Math.cos(angle) * lanesObj.rect_height / 1.5;
+                                    pos.y += Math.sin(angle) * lanesObj.rect_height / 1.5;
+
+                                }
+                            }
+                        }
+                        //push the last one
+                        positives.push(band2.rectangle.greyScore.check2);
+                        distanceCall.push([band2.call, band2.distance / lanesObj.rect_height, band2.distance / lanesObj.rect_width, band2.distance / sixScore]);
+                    } else if (lanes[i].bands.length === 1) {
+                        positives.push(lanes[i].bands[0].rectangle.greyScore.check2);
+                        distanceCall.push([lanes[i].bands[0].call, lanes[i].bands[0].distance / lanesObj.rect_height, lanes[i].bands[0].distance / lanesObj.rect_width, lanes[i].bands[0].distance / sixScore]);
+                    }
+                }
+
+                return Promise.all(negativePromises).then(function (x) {
+                    var ii, g_scores = [], temp, keys = Object.keys(x[i]),
+                            mapRet, posRet;
+                    mapRet = function (ind) {
+                        return function (cat) {
+                            return x[ind][cat];
+                        };
+                    };
+                    posRet = function (ind) {
+                        return function (cat) {
+                            return positives[ind][cat];
+                        };
+                    };
+                    for (ii = 0; ii < x.length; ii += 1) {
+                        temp = [0];
+                        g_scores.push(temp.concat(keys.map(mapRet(ii))));
+                    }
+                    for (ii = 0; ii < positives.length; ii += 1) {
+                        temp = [1];
+                        g_scores.push(temp.concat(keys.map(posRet(ii))));
+                    }
+                    return {
+                        grey_scores: {
+                            data: g_scores,
+                            columns: ['band'].concat(keys)
+                        },
+                        distances: {
+                            data: distanceCall,
+                            columns: ['call', 'dist_height', 'dist_width', 'dist_sixScore']
+                        }
+                    };
+                });
+            });
+        };
         // return {
         //     distances: distancePromise,
         //     region: region
@@ -982,22 +1413,40 @@ hcvGenie.findBands = (function () {
         w = Math.ceil(w);
 
         return myCanvas.getGrey(xs, ys,
-                w, h, 1).then(function (arr) {
-            var greys = [], x, y, count = 0, total = 0, median;
-            for (x = 0; x < arr.length; x += 1) {
-                for (y = 0; y < arr[0].length; y += 1) {
-                    greys.push(arr[x][y]);
-                    total += arr[x][y];
-                    count += 1;
-                }
-            }
-            median = calculateMedian(greys);
-            medianSignals.push([median, total / count, median * count / total]);
-            median = median < 0.003
-                ? 0
-                : median * count / total;
-            return median;
+                w, h, 1).then(calcMedianGrey).then(function (grey1) {
+            return grey1;
         });
+            // return myCanvas.getGrey(xs, ys - h / 2, w, h / 2, 1);
+        // }).then(calcMedianGrey).then(function (grey2) {
+        //     if (g1 - grey2 > minimumMedianGrey) {
+        //         console.log('the greys!', g1, grey2);
+        //         acceptedMedians.push([g1, grey2]);
+        //     } else {
+        //         console.log('no grey?', g1, grey2);
+        //     }
+        //     if (g1 > 1.1) {
+        //         acceptedMedians.push([g1, grey2]);
+        //         return g1;
+        //     }
+        //     return g1 - grey2;
+        // });
+    };
+
+    calcMedianGrey = function (arr) {
+        var greys = [], x, y, count = 0, total = 0, median;
+        for (x = 0; x < arr.length; x += 1) {
+            for (y = 0; y < arr[0].length; y += 1) {
+                greys.push(arr[x][y]);
+                total += arr[x][y];
+                count += 1;
+            }
+        }
+        median = calculateMedian(greys);
+        medianSignals.push([median, total / count, median * count / total]);
+        median = median < 0.003
+            ? 0
+            : median * count / total;
+        return {median: median, avg: total / count};
     };
 
     makeCanvasObject = function (canvasElement) {
@@ -1005,9 +1454,34 @@ hcvGenie.findBands = (function () {
         var retObj = {}, context = canvasElement.getContext('2d'),
                 canvasArr = context.getImageData(0, 0,
                 canvasElement.width, canvasElement.height).data,
-                colorDistMemorize = {},
+                colorDistMemorize = {}, context2,
                 //Local functions
                 calculateGausWindow, gausWeight;
+        // nest the canvas element
+        var div = $('<div>', {id: 'mynewdiv'});
+        div.css('position', 'relative');
+        div.append($(canvasElement));
+        $(canvasElement).attr('id', "mainOne");
+        $(canvasElement).css('z-index', 1);
+        $(canvasElement).css('position', "absolute");
+        $(canvasElement).css('left', "0px");
+        $(canvasElement).css('top', "0px");
+        $(canvasElement).css('width', "100%");
+
+        //make a second canvas object
+        var drawingCanvas = $('<canvas>', {id: 'drawingCanvas'});
+        drawingCanvas.appendTo(div);
+        drawingCanvas[0].height = canvasElement.height;
+        drawingCanvas[0].width = canvasElement.width;
+        drawingCanvas.css('z-index', 2);
+        drawingCanvas.css('position', "absolute");
+        drawingCanvas.css('left', "0px");
+        drawingCanvas.css('top', "0px");
+        drawingCanvas.css('width', "100%");
+        context2 = drawingCanvas[0].getContext('2d');
+        // console.log(div);
+        // console.log(drawingCanvas);
+
 
         calculateGausWindow = function (colorArr) {
             var xPos, yPos, w, h, solution = [],
@@ -1054,6 +1528,8 @@ hcvGenie.findBands = (function () {
 
         retObj.getRGB = function (x, y, w, h, depth) {
             var xPos, yPos, solution = [], arrPos, xArrPos = 0;
+            //depth is used to skip things
+            // canvasArr maintains the original color.
             depth = depth || 1;
             for (xPos = x; xPos < x + w; xPos += depth) {
                 solution[xArrPos] = [];
@@ -1214,42 +1690,57 @@ hcvGenie.findBands = (function () {
         retObj.width = canvasElement.width;
 
         retObj.fillStyle = function (x) {
-            context.fillStyle = x;
+            context2.fillStyle = x;
         };
 
         retObj.fillRect = function (x, y, w, h, color) {
             if (color) {
-                context.fillStyle = color;
+                context2.fillStyle = color;
             }
-            context.fillRect(x, y, w, h);
+            context2.fillRect(x, y, w, h);
         };
 
         retObj.fillRect = function (x, y, w, h, color) {
             if (color) {
-                context.fillStyle = color;
+                context2.fillStyle = color;
             }
-            context.fillRect(x, y, w, h);
+            context2.fillRect(x, y, w, h);
         };
 
         retObj.fillText = function (text, x, y, font, color) {
             if (color) {
-                context.fillStyle = color;
+                context2.fillStyle = color;
             }
             if (font) {
-                context.font = font;
+                context2.font = font;
             }
-            context.fillText(text, x, y);
+            context2.fillText(text, x, y);
         };
+
+        retObj.clearText = function (text, x, y, font) {
+            var previousGCO = context2.globalCompositeOperation;
+            context2.globalCompositeOperation = "destination-out";
+            if (font) {
+                context2.font = font;
+            }
+            // context2.fillStyle = "rgba(255, 255, 255, 0.5)";
+            context2.fillStyle = "#ffffff";
+            context2.fillText(text, x, y);
+            context2.globalCompositeOperation = previousGCO;
+        };
+
+        retObj.clearRect = function (x, y, w, h) {
+            context2.clearRect(x, y, w, h);
+        };
+
+        retObj.canvasHolder = div;
+        // console.log(retObj);
 
         return retObj;
     };
 
     numericalSort = function (a, b) {
-        return a < b
-            ? -1
-            : a > b
-                ? 1
-                : 0;
+        return b - a;
     };
 
     pdf2canvas = function (startObj, canvas, context, scaleSet) {
@@ -1258,7 +1749,9 @@ hcvGenie.findBands = (function () {
                 var viewport, scale, renderContext;
 
                 //Set scale
-                scale = scaleSet || 2;
+                scale = scaleSet || 2.25;
+
+                console.log('PDF Scale', scale);
 
                 //Get page image object
                 viewport = page.getViewport(scale);
@@ -1280,6 +1773,384 @@ hcvGenie.findBands = (function () {
         };
     };
 
+
+    //Set up the functions needed to respond to clicks
+    setUpClickFuncs = function () {
+        var getMousePos, walked = {}, rectangles = {}, checkPosition,
+                width = 0, height = 0, rectCount = 1e-50, //fix divide by 0
+                popup_band, popup_blank, $modal, createBlankPopup,
+                canvasObject, responding = false;
+        getMousePos = function ($canvas, evt) {
+            var rect = $canvas.getBoundingClientRect(), // abs. size of element
+                scaleX = $canvas.width / rect.width,    // relationship bitmap vs. element for X
+                scaleY = $canvas.height / rect.height;  // relationship bitmap vs. element for Y
+
+            return {
+                x: (evt.clientX - rect.left) * scaleX,   // scale mouse coordinates after they have
+                y: (evt.clientY - rect.top) * scaleY     // been adjusted to be relative to element
+            };
+        };
+
+        setUpClickFuncs = function () {
+            walked = {};
+            rectangles = {};
+            width = 0;
+            height = 0;
+            rectCount = 1e-50;
+            responding = false;
+        };
+
+        //Stuff to record where things are found
+        iWalked = function (x, y, lane) {
+            var x0 = Math.round(x), y0 = Math.round(y);
+            walked[x0] = walked[x0] || {};
+            walked[x0][y0] = [{
+                x0: x,
+                y0: y,
+                lane_number: lane,
+                edges: function (ww, hh, x, y) {
+                    // var testRegionParams = {
+                    //     x0: x,
+                    //     y0: y,
+                    //     height: hh * 1.25,
+                    //     theta: 0,
+                    //     width: ww * 1.65
+                    // };
+                    // outlineRectangle(testRegionParams, '#FFFFCC', canvasObject);
+                    return canvasObject.getGaus(
+                        canvasObject.getGrey,
+                        // The -1/+2 are because sobel edge detection  is the
+                        // following step which leaves off the outer boarder of the
+                        // array this adjustment will actually create the array we
+                        // expect based on the parameters
+                        Math.floor(x - ww * 2 / 2) - 1,
+                        Math.floor(y - hh * 1.75 / 2) - 1,
+                        Math.ceil(ww * 2) + 2,
+                        Math.floor(hh * 1.75) + 2
+                    ).then(function (gausArr) {
+                        return edgeDetectionWorker.submit({
+                            array: gausArr,
+                            non_maximum_suppression: 0, //this is field size for nms
+                            // 95.3005% for 0 vs 94.3716% for 1
+                            for_hough: true,
+                            roundDigit: roundDigit,
+                            minimum_edge: minimum_grey_edge
+                        });
+                    }).then(function (edges) {
+                        return houghTransformWorker.submit(edges);
+                    }).then(function (rect) {
+                        rect.x0 = Math.floor(x - ww * 2 / 2) + rect.x0;
+                        rect.y0 = Math.floor(y - hh * 1.75 / 2) + rect.y0;
+                        rect.width = ww;
+                        rect.height = hh;
+                        return rect;
+                    });
+                }
+            }];
+
+            return;
+        };
+
+        checkPosition = function (pos) {
+            var x, y, i, found = [], j, x0, y0, dist, minDist = Infinity, ret, rWid, rHig;
+            x0 = Math.round(pos.x);
+            y0 = Math.round(pos.y);
+            rWid = width / rectCount;
+            rHig = height / rectCount;
+
+            for (x = Math.floor(x0 - rWid); Math.ceil(x < x0 + rWid + 1); x += 1) {
+                for (y = Math.floor(y0 - 2 * rHig); y < Math.ceil(y0 + 2 * rHig + 1); y += 1) {
+                    if (rectangles[x] && rectangles[x][y]) {
+                        found.push(rectangles[x][y]);
+                    } else if (walked[x] && walked[x][y]) {
+                        found.push(walked[x][y]);
+                    }
+                }
+            }
+
+            for (i = 0; i < found.length; i += 1) {
+                dist = Math.sqrt(
+                    Math.pow(pos.x - found[i][0].x0, 2) +
+                    Math.pow(pos.y - found[i][0].y0, 2)
+                );
+                //heavily prioritize found rectangles...
+                if (found[i].length === 2) {
+                    dist -= Math.sqrt(Math.pow(height / rectCount / 2, 2) + Math.pow(width / rectCount / 2, 2));
+                    dist /= 2.5;
+                }
+                if (dist < minDist) {
+                    j = i;
+                    minDist = dist;
+                }
+            }
+
+            if (j !== undefined) {
+                ret = found[j];
+            } else {
+                ret = undefined;
+            }
+            return ret;
+        };
+
+        rectFound = function (band, params, lane) {
+            var x, y, rect;
+
+            rect = band.rectangle;
+            rect.lane_number = params.lane_number;
+
+            x = Math.round(rect.x0);
+            y = Math.round(rect.y0);
+
+
+            height += rect.height;
+            width += rect.width;
+            rectCount += 1;
+
+            // console.log(rect, params);
+
+            rectangles[x] = rectangles[x] || {};
+            rectangles[x][y] = [rect, band, lane];
+
+            return rectangles[x][y];
+        };
+
+        popup_band = function (hit) {
+
+            // console.log(hit);
+            $modal.title('Band');
+            var checks, rect = hit[0], greyScore = hit[0].greyScore, check2;
+
+            //calculate grey score
+            check2 = {
+                //Overall strength of signal checks
+                avg: greyScore.avg,
+                median: greyScore.median,
+                //Edge strength
+                horz: (rect.HT_horz[0] + rect.HT_horz[1]) / rect.width,
+                vert: (rect.HT_vert[0] + rect.HT_vert[1]) / rect.height,
+
+                //ratio
+                avg_horz: -Math.log(greyScore.avg / ((rect.HT_horz[0] + rect.HT_horz[1]) / rect.width)),
+                avg_vert: -Math.log(greyScore.avg / ((rect.HT_vert[0] + rect.HT_vert[1]) / rect.height)),
+                med_horz: -Math.log(greyScore.median / ((rect.HT_horz[0] + rect.HT_horz[1]) / rect.width)),
+                med_vert: -Math.log(greyScore.median / ((rect.HT_vert[0] + rect.HT_vert[1]) / rect.height))
+            };
+
+            checks = Object.keys(check2).map(function (key) {
+                return check2[key] * CONSTS.grey[key];
+            }).reduce(function (a, b) {
+                return a + b;
+            }) + CONSTS.grey.constant;
+
+
+            $modal.body(
+                '<p>Lane: ' + (hit[0].lane_number + 1) + '</p>' +
+                '<p>Band Call: <span id="band_call_modal">' + hit[1].call +
+                '</span>&nbsp;&nbsp;&nbsp;Update Band Call: <input id="update_call_img"></input>' + '</p>' +
+                '<p>Genotype: <span id="genotype_call_modal"></span></p>' +
+                '<p>This rectangle has a grey score of: ' + checks.toFixed(3) +
+                '. This can be compared to the current minimum: ' +
+                CONSTS.grey.minimum.toFixed(4) + '.</p>'
+            );
+
+            $('#genotype_call_modal').text(hit[2].genotype);
+
+            $('#update_call_img').on('change', function (evt) {
+                evt.preventDefault();
+                var p = hit[1].change_call(evt.currentTarget.value * 1);
+                $('#band_call_modal').text(evt.currentTarget.value);
+                p.then(function (x) {
+                    // console.log(x);
+                    $('#genotype_call_modal').text(x);
+                });
+            });
+
+            $modal.footer().unbind("click").html("Remove Band").click(function () {
+                // console.log(hit);
+                var p = hit[1].remove();
+                $modal.modal('toggle');
+                //remove so it will not come up when clicked any longer.
+                delete rectangles[Math.round(hit[0].x0)][Math.round(hit[0].y0)];
+                p.then(function (x) {
+                    // console.log(x);
+                    $('#genotype_call_modal').text(x);
+                });
+            });
+
+            $modal.modal('toggle');
+            //We have to let the modal come into full view, once that occurs we
+            // can focus on the actual input feild putting the cursor there.
+            setTimeout(function () {
+                $('#update_call_img').focus();
+            }, 500);
+            return hit;
+        };
+
+        popup_blank = function (hit, pos) {
+            var rectangle;
+            $modal.title('Add band?');
+            $modal.body('<span id="transform_modal">Applying Hough Transform, please wait...</span>');
+            $modal.footer().unbind("click").html("Add Band");
+
+            $modal.modal('toggle');
+
+
+            hit[0].edges(width / rectCount, height / rectCount, pos.x, pos.y).then(function (x) {
+                rectangle = x;
+                return medianGrey(rectangle, canvasObject);
+            }).then(function (greyScore) {
+                var checks, check2, rect;
+                rect = rectangle;
+                //We check distance because if the spot checked is really
+                // wrong it will come back and think it is somewhere
+                // entirely off the strip.
+
+                check2 = {
+                    //Overall strength of signal checks
+                    avg: greyScore.avg,
+                    median: greyScore.median,
+                    //Edge strength
+                    horz: (rect.HT_horz[0] + rect.HT_horz[1]) / rect.width,
+                    vert: (rect.HT_vert[0] + rect.HT_vert[1]) / rect.height,
+
+                    //ratio
+                    avg_horz: -Math.log(greyScore.avg / ((rect.HT_horz[0] + rect.HT_horz[1]) / rect.width)),
+                    avg_vert: -Math.log(greyScore.avg / ((rect.HT_vert[0] + rect.HT_vert[1]) / rect.height)),
+                    med_horz: -Math.log(greyScore.median / ((rect.HT_horz[0] + rect.HT_horz[1]) / rect.width)),
+                    med_vert: -Math.log(greyScore.median / ((rect.HT_vert[0] + rect.HT_vert[1]) / rect.height))
+                };
+
+                checks = Object.keys(check2).map(function (key) {
+                    return check2[key] * CONSTS.grey[key];
+                }).reduce(function (a, b) {
+                    return a + b;
+                }) + CONSTS.grey.constant;
+
+                $modal.body('<p>This proposed rectangle for lane ' + (hit[0].lane_number + 1) + ' has a grey score of: ' +
+                        checks.toFixed(3) + '. This can be compared to the current minimum: ' +
+                        CONSTS.grey.minimum.toFixed(4) + '.</p>');
+
+                $modal.footer().click(function (evt) {
+                    evt.preventDefault();
+
+                    //Get rid of the click event
+                    $modal.footer().off();
+                    rect.clear = outlineRectangle(rect, '#FFA500', canvasObject);
+                    $modal.modal('toggle');
+                    addBand(hit[0].lane_number, rect).then(function (popupBand) {
+                        //Set timeout to allow modal to finish transition
+                        setTimeout(function () {
+                            popup_band(popupBand);
+                        }, 500);
+                    });
+                });
+                return rect;
+            });
+        };
+
+        //createBlankPopup
+        createBlankPopup = function () {
+            $modal = $('<div>', {
+                class: "modal fade",
+                tabindex: "-1",
+                role: "dialog"
+            });
+            var $mod_dialog = $('<div>', {
+                    class: "modal-dialog",
+                    role: "document"
+                }),
+                $mod_content = $('<div>', {
+                    class: "modal-content"
+                }),
+                $mod_header = $('<div>', {
+                    class: "modal-header",
+                    html: '<button type="button" class="close" data-dismiss=' +
+                            '"modal" aria-label="Close"><span aria-hidden="true">' +
+                            '&times;</span></button>'
+                }),
+                $mod_title = $('<div>', {
+                    class: "modal-title"
+                }),
+                $mod_body = $('<div>', {
+                    class: "modal-body",
+                    style: "word-break:break-all;"
+                }),
+                $mod_footer = $('<div>', {
+                    class: "modal-footer",
+                    html: '<button type="button" class="btn btn-default" ' +
+                            'data-dismiss="modal">Close</button>'
+                }),
+                $mod_footer_extra_button = $('<button>', {
+                    class: "btn btn-primary"
+                });
+
+            $mod_content.append($mod_header.append($mod_title));
+            $mod_content.append($mod_body);
+            $mod_content.append($mod_footer.append($mod_footer_extra_button));
+            $mod_content.appendTo($mod_dialog.appendTo($modal));
+
+            //It does not matter where this gets put...
+            $modal.appendTo($('body'));
+
+            // Add some extra functions
+            $modal.title = function (html) {
+                $mod_title.html(html);
+            };
+
+            $modal.body = function (html) {
+                $mod_body.html(html);
+            };
+
+            $modal.footer = function () {
+                return $mod_footer_extra_button;
+            };
+            createBlankPopup = function () {
+                return;
+            };
+        };
+
+        //Driver function
+        respondToClick = function (canvasElement, canvasObj) {
+            return function (evt) {
+                var pos, hit;
+                evt.preventDefault();
+                if (!responding) {
+                    responding = true;
+                    canvasObject = canvasObj;
+
+                    //create the popup element if it has not already been made
+                    createBlankPopup();
+
+                    //This gets the x/y coordinates of the click event
+                    pos = getMousePos(canvasElement, evt);
+
+                    //This finds what is the closest neighbor
+                    hit = checkPosition(pos);
+
+                    //Make a modal popup for the nearest neighbor
+                    if (hit) {
+                        if (hit.length > 2) {
+                            popup_band(hit);
+                        } else {
+                            popup_blank(hit, pos);
+                        }
+                    }
+
+                    //If there is no hit, then do not respond
+
+                    // console.log(hit);
+
+                    setTimeout(function () {
+                        responding = false;
+                    }, 50);
+
+                    return pos;
+                }
+            };
+        };
+    };
+
+
     //Truely the main function, this returns to the calling function
     processCanvas = function (canvasElement) {
         var myCanvasObject, greenRegionPromise,
@@ -1287,6 +2158,11 @@ hcvGenie.findBands = (function () {
 
         //Convert the canvas into an object with a number of functions attached
         myCanvasObject = makeCanvasObject(canvasElement);
+        // console.log(canvasElement);
+
+        //Add in the click response stuff
+        $(canvasElement).parent().click(respondToClick(canvasElement, myCanvasObject));
+        $(canvasElement).parent().children().click(respondToClick(canvasElement, myCanvasObject));
 
         //Find the region of the canvas in which there are green bands
         greenRegionPromise = findGreenRegion(myCanvasObject).then(
@@ -1302,10 +2178,9 @@ hcvGenie.findBands = (function () {
 
         //Assign parts of the return object
         return {
-            canvas: canvasElement,
-            bandLocationPromise: distancesMatrix,
-            canvasObject: myCanvasObject,
-            canvasAnalysisRegion: distancesMatrix.region
+            canvas: $(canvasElement).parent(),
+            bandingPromise: distancesMatrix,
+            canvasObject: myCanvasObject
         };
     };
 
@@ -1314,11 +2189,31 @@ hcvGenie.findBands = (function () {
     };
 
     main = function (input_obj) {
+        //This should clear the jobs buffer...
+        colorDistanceWorker.clear_jobs();
+        houghTransformWorker.clear_jobs();
+        vertHoughTransformWorker.clear_jobs();
+        edgeDetectionWorker.clear_jobs();
+
+        //reset click funcs
+        setUpClickFuncs();
+
+        //CONSTS object definition
+        CONSTS = input_obj.image.parameters;
+
+        if (input_obj.onchange && typeof input_obj.onchange === 'function') {
+            onchange = input_obj.onchange;
+        } else {
+            onchange = function () {
+                // console.log(input_obj, 'called blank change function');
+                return;
+            };
+        }
         return new Promise(function (resolve, reject) {
             //if everything is good with then call resolve
             var canvas, context, imgPromise, scale;
 
-            scale = input_obj.image.scale || 2;
+            scale = input_obj.image.scale || 2.25;
 
             //Create invisible canvas object
             canvas = document.createElement('canvas');
@@ -1400,7 +2295,8 @@ hcvGenie.genotype = (function () {
             thisKey = (parseInt(binarySolution.join(''), 2)).toString(36);
 
             if (database.hasOwnProperty(thisKey)) {
-                final = database[thisKey].replace(/GNT/g, 'Genotype');
+                final = database[thisKey].replace(/\*/g, ', but the possibility of G 6 \(subtypes c-l\) cannot be excluded');
+                final = final.replace(/G/g, 'Genotype ');
             } else {
                 final = "Unknown Band Pattern";
             }

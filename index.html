@@ -8,7 +8,10 @@
     <meta name="description" content="HCV Genie, automated interpreter for Versant HCV LiPA genotype assays.">
     <meta name="author" content="Alex Dussaq, alexdussaq.info">
     <!-- <link rel="icon" href="../../favicon.ico"> -->
-        <script>
+  <title>HCV Genie 2.0</title>
+    <!-- Bootstrap core CSS -->
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
       m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -17,9 +20,6 @@
       ga('create', 'UA-93917807-1', 'auto');
       ga('send', 'pageview');
   </script>
-	<title>HCV Genie 2.0</title>
-    <!-- Bootstrap core CSS -->
-    <link href="./css/bootstrap.min.css" rel="stylesheet">
     <style type="text/css">
         body {
             min-height: 1000px;
@@ -27,6 +27,27 @@
         }
         .bottom-buffer {
             margin-bottom:20px;
+        }
+
+        .my-img-thumbnail {
+            /*display: inline-block;*/
+            max-width: 100%;
+            height: auto;
+            /*padding: 4px;*/
+            line-height: 2.42857143;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            -webkit-transition: all .2s ease-in-out;
+            -o-transition: all .2s ease-in-out;
+            transition: all .2s ease-in-out;
+        }
+        .affix {
+            top: 50px;
+            width: inherit;
+            background-color: #fff;
+            z-index: 10;
+            overflow-x: hidden;
         }
         /*Below is to wrap the file upload in a button*/
         .btn-file {
@@ -81,22 +102,29 @@
     <!-- <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet"> -->
 
     <!-- Analytical Elements -->
-    <script type="text/javascript" src="./js/promises/checkPromises.min.js"></script>
-    <script type="text/javascript" src="./js/amd_ww.2.0.1.min.js"></script>
+    <script type="text/javascript" src="../js/promises/checkPromises.min.js"></script>
+    <script type="text/javascript" src="../js/amd_ww.2.0.1.min.js"></script>
 	<script type="text/javascript" src="./js/pdfjs/pdf.min.js"></script>
-    <script type="text/javascript" src="./js/hcvGenie2.js"></script> 
+  <script type="text/javascript" src="./js/hcvGenie2.js"></script> 
 </head>
 <body>
   <div class="tabbable">
   <nav class="navbar navbar-default navbar-fixed-top">
       <div class="container">
         <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
           <a class="navbar-brand" href="#">HCV Genie</a>
         </div>
-        <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav nav-tabs">
+        <div id="navbar" class="navbar-collapse collapse" aria-expanded="false">
+          <ul class="nav navbar-nav">
             <li class="active"><a id="tag1" href="#home" data-toggle="tab">Home</a></li>
             <li id="tag2" ><a href="#about" data-toggle="tab">About</a></li>
+            <li id="train_tab" ><a href="/model.html">Train</a></li>
             <li><a id="tag3" href="#contact" data-toggle="tab">Contact</a></li>
           </ul>
         </div><!--/.nav-collapse -->
@@ -112,7 +140,7 @@
                   <!-- Announcement Header -->
                   <h1 class="text-center">HCV Genie</h1>
                   <h2 class="text-center">
-                    A HIPAA Compliant, Automated Interpreter
+                    A <a href="#" id="HIPPA_Line">HIPAA Compliant*</a>, Automated Interpreter
                     <br />
                     for Siemens Versant HCV Genotype LiPAs
                   </h2>
@@ -158,12 +186,14 @@
                 </div>
             </div>
           </div>
-          <div class="row">
-            <div id="textResults" class='col-xs-12'>
+          <div>
+            <div id="fixer">
+              <div class="" id="imageResults">
+              </div>
             </div>
           </div>
           <div class="row">
-            <div id="imageResults" class='col-xs-12'>
+            <div id="textResults" class='col-xs-12'>
             </div>
           </div>
           <div class="row">
@@ -177,9 +207,19 @@
                  <div class='col-xs-12'>
                      <div class="jumbotron">
                         <h3>
-                        Coming Soon...
+                        <p>Hepatitis C virus (HCV) genotyping at our institution is performed using the Versant Hepatitis C virus genotype 2.0 Line Probe Assay (LiPA). HCV Genie 2 utilizes a scanned image to generate the genotypes rather than a manual, laborious, and error prone process that involves the comparison of the banding pattern on a test strip to a physical reference table.</p>
+                        <p>HCV Genie 2 is built entirely in client side JavaScript, this means that your data will never leave your computuer. Instead the image analysis tools migrate to your browser and provide you with the genotyping result. It is due to this that we claim HIPAA compliance. It should be noted that individual institutions may have different rules in regards to HIPAA compliance, so you should check with your instituion before utilizing this tool.</p>
+                        <p>HCV Genie 2's paper has been submitted and a link will be provide here for more information when it become avaliable.</p>
                         </h3>
                     </div>
+                    <p>The procedure we recommend for decreasing processing time in your laboratory is as follows:
+                        <ol>
+                          <li>Run the LiPA analysis as normal.</li>
+                          <li>While still wet, place test strips on a laminated beige piece of paper. (<a href="dataExamples/sample_yellow.pdf">Download Example</a>)</li>
+                          <li>Pat the strips and page dry with disposable towel.</li>
+                          <li>Scan to a PDF face down on a flatbed scanner, then drag the file into this tool.</li>
+                        </ol>
+                        </p>
                  </div>
             </div>
         </div>
@@ -198,6 +238,14 @@
 </body>
 <!-- Load UI Scripts -->
 <script type="text/javascript" src="./js/bootstrap/jquery-2.1.4.min.js"></script>
+<script>
+// Fix the link for hippa compliant
+  $('#HIPPA_Line').click(function (evt) {
+    evt.preventDefault();
+    console.log('here');
+    $('#tag2').children().click();
+  })
+</script>
 <script src="./js/bootstrap/bootstrap.min.js"></script>
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <!-- <script src="../../assets/js/ie10-viewport-bug-workaround.js"></script> -->

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="HCV Genie, automated interpreter for Versant HCV LiPA genotype assays.">
+    <meta name="author" content="Alex Dussaq, alexdussaq.info">
+    <!-- <link rel="icon" href="../../favicon.ico"> -->
+    <title>HCV Genie 2.0</title>
+    <!-- Bootstrap core CSS -->
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-93917807-1', 'auto');
+      ga('send', 'pageview');
+  </script>
+    <style type="text/css">
+        body {
+            min-height: 1000px;
+            padding-top: 70px;
+        }
+        .bottom-buffer {
+            margin-bottom:20px;
+        }
+
+        .my-img-thumbnail {
+            /*display: inline-block;*/
+            max-width: 100%;
+            height: auto;
+            /*padding: 4px;*/
+            line-height: 2.42857143;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            -webkit-transition: all .2s ease-in-out;
+            -o-transition: all .2s ease-in-out;
+            transition: all .2s ease-in-out;
+        }
+        .affix {
+            top: 50px;
+            width: inherit;
+            background-color: #fff;
+            z-index: 10;
+            overflow-x: hidden;
+        }
+        /*Below is to wrap the file upload in a button*/
+        .btn-file {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-file input[type=file] {
+            position: absolute;
+            top: 0;
+            right: 0;
+            min-width: 100%;
+            min-height: 100%;
+            font-size: 100px;
+            text-align: right;
+            filter: alpha(opacity=0);
+            opacity: 0;
+            outline: none;
+            background: white;
+            cursor: inherit;
+            display: block;
+        }
+        .drop {
+          min-height: 150px;
+          width: 70%;
+          border: 8px dashed gray;
+          margin: 10px;
+          padding: 10px;
+          border-radius: 15px;
+          font-size: 24px;
+          font-weight: bold;
+          color:gray;
+          margin-left:15%;
+          position: relative;
+        }
+        .drop.hover {
+            border: 8px dashed black; 
+            color:black;
+        }
+    </style>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-75135993-1', 'auto');
+      ga('send', 'pageview');
+
+    </script>
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <!-- <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet"> -->
+
+    <!-- Analytical Elements -->
+    <script type="text/javascript" src="../js/promises/checkPromises.min.js"></script>
+    <script type="text/javascript" src="../js/bootstrap/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="../js/amd_ww.2.0.1.min.js"></script>
+    <script type="text/javascript" src="../js/pdfjs/pdf.min.js"></script>
+    <script type="text/javascript" src="./js/hcvGenie2.js"></script> 
+</head>
+<body>
+  <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+          <a class="navbar-brand" href="#">HCV Genie</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse" aria-expanded="false">
+          <ul class="nav navbar-nav">
+            <li><a href="/#home">Home</a></li>
+            <li><a href="/#about">About</a></li>
+            <li class="active"><a href="/model.html">Train</a></li>
+            <li><a href="/#contact">Contact</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+  <div class="container tab-content">
+    <div class="row">
+      <div class='col-xs-12 col-sm-4 col-sm-offset-4 text-center bottom-buffer'>
+        <span style="width:211px;" class="btn computerFileButton btn-primary btn-lg btn-file">
+          Open From Computer<input class="computerFile" type="file">
+        </span>
+      </div>
+      <div id="download_params" class='hidden col-xs-12 col-sm-4 col-sm-offset-4 text-center bottom-buffer'>
+        <span style="width:211px;" class="btn computerFileButton btn-primary btn-lg btn-file">
+          Download Parameters
+        </span>
+      </div>
+    </div>
+    <div class="text-center row">
+    <div class='text-center col-xs-12'>
+    <div class="drop" id="drop_model">
+      <div style="margin-top: 40px;">Drop File Here</div>
+    </div>
+    </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-12" id="model_img">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-12" id="model">
+      </div>
+    </div>
+  </div>
+</body>
+<!-- Load UI Scripts -->
+<script src="/js/bootstrap/bootstrap.min.js"></script>
+<script src="/js/linearFit.js"></script>
+<script src="/js/model_runner.js"></script>
+<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <!-- <script src="../../assets/js/ie10-viewport-bug-workaround.js"></script> -->
+
+</html>
