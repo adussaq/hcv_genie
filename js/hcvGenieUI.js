@@ -60,7 +60,7 @@ var glob, global2 = [];
                 image: {
                     type: 'pdf',
                     pageNumber: 1,
-                    url: '../dataExamples/pages/page' + page + '.pdf',
+                    url: './dataExamples/pages/page' + page + '.pdf',
                     scale: 2.25,
                     parameters: constants_object
                 },
