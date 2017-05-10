@@ -577,7 +577,7 @@ var glob, global2 = [];
         if (window.location.search && window.location.search.match(/[?&]data=[^&?#]+/)) {
             constantURL = window.location.search.match(/([?&]data=)([^&?#]+)/)[2];
         } else {
-            constantURL = '/json/default_params.json';
+            constantURL = './json/default_params.json';
         }
         $.get(constantURL, function (x) {
             constants_object = x;
