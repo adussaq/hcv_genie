@@ -555,27 +555,17 @@ var glob, global2 = [];
         });
     }());
 
-    //Set up tabs
-    (function () {
-        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            var target = $(e.target).attr("href"); // activated tab
-            if (target !== '#home') {
-                window.location.hash = target;
-            } else {
-                window.location.hash = "";
-            }
-            window.scrollTo(0, 0);
-        });
-    }());
-
     window.onload = function () {
         var constantURL;
         window.scrollTo(0, 0);
+
         if (window.location.hash) {
             $('a[href="' + window.location.hash + '"]').click();
+        } else {
+            $('#tab1').children().click();
         }
-        if (window.location.search && window.location.search.match(/[?&]data=[^&?#]+/)) {
-            constantURL = window.location.search.match(/([?&]data=)([^&?#]+)/)[2];
+        if (window.location.search && window.location.search.match(/[?&]params=[^&?#]+/)) {
+            constantURL = window.location.search.match(/([?&]params=)([^&?#]+)/)[2];
         } else {
             constantURL = './json/default_params.json';
         }
@@ -585,7 +575,7 @@ var glob, global2 = [];
         }).fail(function () {
             $('#home').children().hide();
             $('#home').append('<div class="container well">Failed to load constants object, this tool does not work without that. Please provide it in the url using a data= tag, or remove the data= tag to utilize the defaults.</div>');
-            alert("Failed to get constants object, make sure your '?data=...' URL is correct and CORS enabled.");
+            alert("Failed to get constants object, make sure your '?params=...' URL is correct and CORS enabled.");
         });
     };
 }());

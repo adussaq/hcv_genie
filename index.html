@@ -86,8 +86,9 @@
 
       ga('create', 'UA-75135993-1', 'auto');
       ga('send', 'pageview');
-
     </script>
+
+    <script type="text/javascript" src="./js/bootstrap/jquery-2.1.4.min.js"></script>
 
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <!-- <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet"> -->
@@ -113,16 +114,16 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse" aria-expanded="false">
           <ul class="nav navbar-nav">
-            <li class="active"><a id="tag1" href="#home" data-toggle="tab">Home</a></li>
-            <li id="tag2" ><a href="#about" data-toggle="tab">About</a></li>
-            <li id="train_tab" ><a rel="keep-params" href="./model.html">Train</a></li>
+            <li id="tab1"><a href="#home" data-toggle="tab">Home</a></li>
+            <li id="tag2"><a href="#about" data-toggle="tab">About</a></li>
+            <li id="train_tab"><a rel="keep-params" href="./model.html">Train</a></li>
             <li><a id="tag3" href="#contact" data-toggle="tab">Contact</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
 
-    <div class="tab-content" id="tabs">
+    <div style="display:none;" class="tab-content" id="tabs">
         <div class="tab-pane fade active in container" id="home">
           <!-- Main component for a primary marketing message or call to action -->
           <div class="row">
@@ -227,8 +228,24 @@
         </div>
   </div>
 </body>
+<script>
+    //Set up tabs
+    (function () {
+        $('#tabs').css('display', 'none');
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            var target = $(e.target).attr("href"); // activated tab
+            if (target !== '#home') {
+                window.location.hash = target;
+            } else {
+                window.location.hash = "";
+            }
+            window.scrollTo(0, 0);
+            $('#tabs').css('display', 'initial');
+        });
+
+    }());
+  </script>
 <!-- Load UI Scripts -->
-<script type="text/javascript" src="./js/bootstrap/jquery-2.1.4.min.js"></script>
 <script>
 // Fix the link for hippa compliant
   $('#HIPPA_Line').click(function (evt) {
@@ -240,7 +257,6 @@
   //fix links so they maintain the search parameter
   $("a[rel~='keep-params']").each(function () {
     var params = window.location.search;
-    console.log('here...');
     $(this).attr('href', $(this).attr('href') + params);
   });
 </script>
