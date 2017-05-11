@@ -1,9 +1,8 @@
-/*global console, alert, $, jQuery, window, FileReader, hcvGenie, globModel, LINEARFIT*/
-var globModel = [];
+/*global console, Blob, alert, $, jQuery, window, FileReader, hcvGenie, globModel, LINEARFIT*/
 (function () {
     'use strict';
 
-    var constants_object, $ = jQuery, startAnalysis, getFile, displayResults, scaleCanvas, proccessedImg, startFitting, dropRegion, fromComputerButton, sampleButtonClicked = false;
+    var globModel = [], saveData, constants_object, $ = jQuery, startAnalysis, getFile, displayResults, scaleCanvas, proccessedImg, startFitting, dropRegion, fromComputerButton, sampleButtonClicked = false;
 
     //get the file for analysis
     window.onload = function () {
@@ -239,5 +238,116 @@ var globModel = [];
                 getFile(evt.originalEvent.dataTransfer.files[0]);
             }
         });
+
+        //Set up the download parameters button
+        $('#download_params').click(function (evt) {
+            var today, distances, distances6, distancesA, distModel6s, distModelAs, greys, greyModel, nonGreyMax, paramObj;
+
+            paramObj = {
+                grey: {},
+                distance: {},
+                distance2: {}
+            };
+
+            today = new Date();
+            today = today.toLocaleDateString().replace(/\//g, '_') +
+                    today.getHours().toString() +
+                    today.getMinutes().toString();
+
+            evt.preventDefault();
+
+            //grey values
+            greys = globModel.map(function (x) {
+                return x.grey_scores.data;
+            }).reduce(function (a, b) {
+                return a.concat(b);
+            });
+
+            //Grey Linear Fit
+            greyModel = LINEARFIT(greys.map(function (x) {
+                return x.slice(1, x.length);
+            }), greys.map(function (x) {
+                return x[0];
+            }), 1);
+
+            //Save grey parameters
+            greyModel.params.map(function (x, i) {
+                var key = globModel[0].grey_scores.columns[i + 1] || 'constant';
+                paramObj.grey[key] = x;
+            });
+
+            //Add in minimum value for grey, maximum of the failed spots
+            nonGreyMax = -Infinity;
+            greys.map(function (x) {
+                var i, val = greyModel.params[x.length - 1];
+                for (i = 1; i < x.length; i += 1) {
+                    val += greyModel.params[i - 1] * x[i];
+                }
+                if (!x[0]) {
+                    nonGreyMax = Math.max(nonGreyMax, val);
+                }
+            });
+            paramObj.grey.minimum = nonGreyMax;
+
+            //distances now
+            distances = globModel.map(function (x) {
+                return x.distances.data;
+            }).reduce(function (a, b) {
+                return a.concat(b);
+            });
+            distances6 = [];
+            distancesA = [];
+            distances.map(function (x) {
+                if (x[0] < 7) {
+                    distances6.push(x);
+                } else {
+                    distancesA.push(x);
+                }
+            });
+
+            distModel6s = LINEARFIT(distances6.map(function (x) {
+                return x.slice(1, x.length - 1); // Cannot use 6 score
+            }), distances6.map(function (x) {
+                return x[0];
+            }), 1);
+            distModelAs = LINEARFIT(distancesA.map(function (x) {
+                return x.slice(1, x.length);
+            }), distancesA.map(function (x) {
+                return x[0];
+            }), 1);
+
+            //Save dist parameters
+            distModel6s.params.map(function (x, i) {
+                var key = globModel[0].distances.columns[i + 1];
+                key = key === "dist_sixScore"
+                    ? 'constant'
+                    : key;
+                key = key.replace('dist_', '');
+                paramObj.distance[key] = x;
+            });
+            distModelAs.params.map(function (x, i) {
+                var key = globModel[0].distances.columns[i + 1] || 'constant';
+                key = key.replace('dist_', '');
+                paramObj.distance2[key] = x;
+            });
+
+            saveData(JSON.stringify(paramObj), 'hcvgenie_params' + today + '.json');
+        });
     }());
+
+    saveData = (function () {
+        var a = document.createElement("a");
+        document.body.appendChild(a);
+        //a.style = "display: none";
+        return function (data, fileName) {
+            //var json = JSON.stringify(data),
+            var blob = new Blob([data], {type: "octet/stream"}),
+                url = window.URL.createObjectURL(blob);
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+    }());
+
 }());
