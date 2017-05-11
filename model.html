@@ -87,16 +87,6 @@
             color:black;
         }
     </style>
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-      ga('create', 'UA-75135993-1', 'auto');
-      ga('send', 'pageview');
-
-    </script>
 
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <!-- <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet"> -->
@@ -122,10 +112,10 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse" aria-expanded="false">
           <ul class="nav navbar-nav">
-            <li><a href="./#home">Home</a></li>
-            <li><a href="./#about">About</a></li>
+            <li><a rel="keep-params" href="./">Home</a></li>
+            <li><a rel="keep-params" href="./#about">About</a></li>
             <li class="active"><a href="./model.html">Train</a></li>
-            <li><a href="./#contact">Contact</a></li>
+            <li><a rel="keep-params" href="./#contact">Contact</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
@@ -139,7 +129,7 @@
         </span>
       </div>
       <div id="download_params" class='hidden col-xs-12 col-sm-4 col-sm-offset-4 text-center bottom-buffer'>
-        <span style="width:211px;" class="btn computerFileButton btn-primary btn-lg btn-file">
+        <span style="width:211px;" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal">
           Download Parameters
         </span>
       </div>
@@ -160,7 +150,38 @@
       </div>
     </div>
   </div>
+<!-- modal for file being prepared... -->
+  <div id="myModal" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <p>Your parameter object is being generated, it will download as soon as it is complete. You may continue to add images in to create a more robust model, however you will need to download the new parameters if you do continue.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 </body>
+
+<script>
+  //fix links so they maintain the search parameter
+  $("a[rel~='keep-params']").each(function () {
+    var params = window.location.search, link = $(this).attr('href'), linkA;
+    linkA = link.split('#');
+    link = linkA.shift() + params;
+    if (linkA.length) {
+      link += '#' + linkA.join('#');
+    }
+    console.log('here...');
+    $(this).attr('href', link);
+  });
+</script>
+
 <!-- Load UI Scripts -->
 <script src="./js/bootstrap/bootstrap.min.js"></script>
 <script src="./js/linearFit.js"></script>
